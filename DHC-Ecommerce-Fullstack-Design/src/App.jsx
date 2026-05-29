@@ -10,20 +10,37 @@ import Register from './components/Auth/Register';
 import Checkout from './components/Checkout';
 import MyOrders from './components/MyOrders';
 import Admin from './components/Admin/index.jsx';
+import NotFound from './components/shared/NotFound';
 import { AuthProvider, useAuth } from './components/Auth/AuthContext';
 import { CartProvider } from './components/CartContext';
 import './App.css';
 
+const KNOWN_PAGES = ['home', 'products', 'product-details', 'cart', 'checkout', 'login', 'register', 'orders', 'admin'];
+
 const AppContent = ({ currentPage, setCurrentPage, navigateTo }) => {
   const pageName = typeof currentPage === 'string' ? currentPage : currentPage?.name;
-  const { isAuthenticated } = useAuth();
-
   // Protected Routes
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const roles = user?.roles || [];
+  const isAdmin = roles.includes('Admin') || roles.includes('SuperAdmin');
+
   useEffect(() => {
+    if (isLoading) return;
+
     if ((pageName === 'checkout' || pageName === 'orders') && !isAuthenticated) {
       navigateTo('login', { redirectTo: pageName });
     }
-  }, [pageName, isAuthenticated, navigateTo]);
+
+    if (pageName === 'admin') {
+      if (!isAuthenticated) {
+        navigateTo('login', { redirectTo: 'admin' });
+      } else if (!isAdmin) {
+        navigateTo('home');
+      }
+    }
+  }, [pageName, isAuthenticated, isAdmin, isLoading, navigateTo]);
+
+  const isUnknownPage = !KNOWN_PAGES.includes(pageName);
 
   return (
     <div className={`min-h-screen ${pageName === 'admin' ? 'bg-[#f1f5f9]' : 'bg-bg-main'} flex flex-col justify-between`}>
@@ -38,6 +55,7 @@ const AppContent = ({ currentPage, setCurrentPage, navigateTo }) => {
         {pageName === 'register' && <Register onNavigate={navigateTo} />}
         {pageName === 'orders' && isAuthenticated && <MyOrders onNavigate={navigateTo} />}
         {pageName === 'admin' && <Admin onNavigate={navigateTo} />}
+        {isUnknownPage && <NotFound onNavigate={navigateTo} />}
       </div>
       {pageName !== 'admin' && <Footer />}
     </div>
@@ -48,6 +66,8 @@ const App = () => {
   const [currentPage, setCurrentPage] = useState(() => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
+      if (path === '/') return 'home';
+
       const productDetailMatch = path.match(/^\/product-details\/([^/]+)$/);
       if (path === '/products') return 'products';
       if (productDetailMatch) return { name: 'product-details', productId: productDetailMatch[1] };
@@ -58,7 +78,8 @@ const App = () => {
       if (path === '/login') return 'login';
       if (path === '/register') return 'register';
       if (path === '/admin') return 'admin';
-      return 'home';
+
+      return '404';
     }
     return 'home';
   });
@@ -90,6 +111,7 @@ const App = () => {
     else if (pageName === 'register') newPath = '/register';
     else if (pageName === 'orders') newPath = '/orders';
     else if (pageName === 'admin') newPath = '/admin';
+    else if (pageName === '404') newPath = '/404';
 
     if (window.location.pathname !== newPath) {
       window.history.pushState({ page: nextPage }, '', newPath);
@@ -103,6 +125,8 @@ const App = () => {
         setCurrentPage(event.state.page);
       } else {
         const path = window.location.pathname;
+        if (path === '/') { setCurrentPage('home'); return; }
+
         const productDetailMatch = path.match(/^\/product-details\/([^/]+)$/);
         if (path === '/products') setCurrentPage('products');
         else if (path === '/checkout') setCurrentPage('checkout');
@@ -113,7 +137,7 @@ const App = () => {
         else if (path === '/register') setCurrentPage('register');
         else if (path === '/orders') setCurrentPage('orders');
         else if (path === '/admin') setCurrentPage('admin');
-        else setCurrentPage('home');
+        else setCurrentPage('404');
       }
     };
 

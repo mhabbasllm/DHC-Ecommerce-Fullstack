@@ -20,6 +20,8 @@ namespace App_API.Data
         public const string CustomerSupportRoleId = "4";
         public const string CustomerRoleId = "5";
 
+        private static readonly PasswordHasher<AppUser> Hasher = new PasswordHasher<AppUser>();
+
         // Category IDs
         public const int HygieneCategoryId = 1;
         public const int HomeOutdoorCategoryId = 2;
@@ -57,7 +59,7 @@ namespace App_API.Data
                 Email = "superadmin@shopy.com",
                 NormalizedEmail = "SUPERADMIN@SHOPY.COM",
                 EmailConfirmed = true,
-                PasswordHash = "AQAAAAIAAYagAAAAEI0+G9O/L6bT1z0Yv4e4vR9MvL7Y7k9y2e1V2v3x4y5z6a7b8c9d0e1f2g3h4i", // Admin@123
+                PasswordHash = Hasher.HashPassword(null!, DefaultAdminPassword),
                 FirstName = "Super",
                 LastName = "Admin",
                 FullName = "Super Admin",
@@ -79,7 +81,7 @@ namespace App_API.Data
                 Email = "Abbas_khan@shopyhub.com",
                 NormalizedEmail = "ABBAS_KHAN@SHOPYHUB.COM",
                 EmailConfirmed = true,
-                PasswordHash = "AQAAAAIAAYagAAAAEI0+G9O/L6bT1z0Yv4e4vR9MvL7Y7k9y2e1V2v3x4y5z6a7b8c9d0e1f2g3h4i", // Admin@123
+                PasswordHash = Hasher.HashPassword(null!, DefaultAdminPassword),
                 FirstName = "Muhammad",
                 LastName = "Abbas",
                 FullName = "Muhammad Abbas",
@@ -101,7 +103,7 @@ namespace App_API.Data
                 Email = "productmanager@shopy.com",
                 NormalizedEmail = "PRODUCTMANAGER@SHOPY.COM",
                 EmailConfirmed = true,
-                PasswordHash = "AQAAAAIAAYagAAAAEI0+G9O/L6bT1z0Yv4e4vR9MvL7Y7k9y2e1V2v3x4y5z6a7b8c9d0e1f2g3h4i", // Admin@123
+                PasswordHash = Hasher.HashPassword(null!, DefaultAdminPassword),
                 FirstName = "Product",
                 LastName = "Manager",
                 FullName = "Product Manager",
@@ -123,7 +125,7 @@ namespace App_API.Data
                 Email = "support@shopy.com",
                 NormalizedEmail = "SUPPORT@SHOPY.COM",
                 EmailConfirmed = true,
-                PasswordHash = "AQAAAAIAAYagAAAAEI0+G9O/L6bT1z0Yv4e4vR9MvL7Y7k9y2e1V2v3x4y5z6a7b8c9d0e1f2g3h4i", // Admin@123
+                PasswordHash = Hasher.HashPassword(null!, DefaultAdminPassword),
                 FirstName = "Customer",
                 LastName = "Support",
                 FullName = "Customer Support",

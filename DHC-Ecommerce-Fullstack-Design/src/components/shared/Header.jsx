@@ -14,7 +14,8 @@ import {
   Phone,
   Info,
   Search,
-  LogOut
+  LogOut,
+  Shield
 } from 'lucide-react';
 import { useAuth } from '../Auth/AuthContext';
 import { useCart } from '../CartContext';
@@ -26,6 +27,9 @@ const Header = ({ onNavigate, currentPage }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const hasOwnMobileHeader = ['products', 'product-details', 'cart'].includes(currentPage);
   const { isAuthenticated, user, logout } = useAuth();
+
+  const roles = user?.roles || [];
+  const isAdmin = roles.includes('Admin') || roles.includes('SuperAdmin');
 
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -84,6 +88,7 @@ const Header = ({ onNavigate, currentPage }) => {
 
           <div className="flex gap-5">
             {[
+              isAdmin && { icon: <Shield size={20} className="text-brand-blue" />, label: 'Admin', onClick: () => onNavigate('admin') },
               isAuthenticated && user
                 ? {
                   icon: (
@@ -111,7 +116,7 @@ const Header = ({ onNavigate, currentPage }) => {
                 label: 'My cart',
                 onClick: () => onNavigate('cart')
               },
-            ].map((item, idx) => (
+            ].filter(Boolean).map((item, idx) => (
               <div
                 key={idx}
                 className="flex flex-col items-center text-xs text-brand-gray gap-1 cursor-pointer hover:text-brand-blue transition-colors group"
@@ -144,6 +149,11 @@ const Header = ({ onNavigate, currentPage }) => {
               <span className="flex items-center gap-1 cursor-pointer hover:text-brand-blue transition-colors">Help <ChevronDown size={14} /></span>
             </div>
             <div className="flex gap-5 font-medium text-brand-dark">
+              {isAdmin && (
+                <span className="flex items-center gap-1 cursor-pointer text-brand-blue font-bold hover:underline" onClick={() => onNavigate('admin')}>
+                  <Shield size={14} /> Admin Panel
+                </span>
+              )}
               <span className="flex items-center gap-1 cursor-pointer hover:text-brand-blue transition-colors">English, USD <ChevronDown size={14} /></span>
               <span className="flex items-center gap-2 cursor-pointer hover:text-brand-blue transition-colors">
                 Ship to <img src={flagDE} alt="DE" className="w-5 object-contain" /> <ChevronDown size={14} />
@@ -294,10 +304,11 @@ const Header = ({ onNavigate, currentPage }) => {
               <ul className="px-4 space-y-1">
                 {[
                   { icon: <Home size={18} />, label: 'Home', page: 'home' },
+                  isAdmin && { icon: <Shield size={18} className="text-brand-blue" />, label: 'Admin Panel', page: 'admin' },
                   { icon: <Grid3X3 size={18} />, label: 'Categories', page: 'products' },
                   { icon: <Heart size={18} />, label: 'Favorites', page: 'products' },
                   { icon: <ClipboardList size={18} />, label: 'My orders', page: 'orders' },
-                ].map((item, idx) => (
+                ].filter(Boolean).map((item, idx) => (
                   <li
                     key={idx}
                     className="flex items-center gap-3 px-3 py-2.5 text-sm text-brand-dark font-medium rounded-md cursor-pointer hover:bg-blue-50 hover:text-brand-blue transition-colors"

@@ -129,3 +129,38 @@ export const getHomepageSections = async () => {
     recommendedItems: (get(data, 'RecommendedItems') || []).map(normalizeProduct).filter(Boolean),
   };
 };
+
+export const createProduct = async (productData) => {
+  const response = await fetch(PRODUCT_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token')}` // Simple direct access for now or pass from caller
+    },
+    body: JSON.stringify(productData)
+  });
+  return readJson(response);
+};
+
+export const updateProduct = async (id, productData) => {
+  const response = await fetch(`${PRODUCT_URL}/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    },
+    body: JSON.stringify(productData)
+  });
+  return readJson(response);
+};
+
+export const deleteProduct = async (id) => {
+  const response = await fetch(`${PRODUCT_URL}/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    }
+  });
+  if (!response.ok) throw new Error('Failed to delete');
+  return true;
+};

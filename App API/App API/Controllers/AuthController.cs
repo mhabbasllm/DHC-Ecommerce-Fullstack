@@ -67,21 +67,32 @@ namespace App_API.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
             var user = await _userManager.FindByEmailAsync(model.Email!);
+            if (user == null)
+                return BadRequest(new { message = "User Name or Password is incorrect" });
 
-            if (user is not null && await _userManager.CheckPasswordAsync(user, model.Password!))
+            if (!user.IsActive)
+                return BadRequest(new { message = "This account has been disabled. Please contact support." });
+
+            if (await _userManager.CheckPasswordAsync(user, model.Password!))
             {
                 var roles = await _userManager.GetRolesAsync(user);
                 var signInKey = new SymmetricSecurityKey(
                     Encoding.UTF8.GetBytes(_config["AppSettings:JWTSecret"]!));
 
+                var claims = new List<Claim>
+                {
+                    new Claim("UserID", user.Id),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id),
+                };
+
+                foreach (var role in roles)
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, role));
+                }
+
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
-                    Subject = new ClaimsIdentity(new Claim[]
-                    {
-                        new Claim("UserID", user.Id),
-                        new Claim(ClaimTypes.NameIdentifier, user.Id),
-                        new Claim(ClaimTypes.Role, roles.FirstOrDefault() ?? "Customer"),
-                    }),
+                    Subject = new ClaimsIdentity(claims),
                     Expires = DateTime.UtcNow.AddMonths(1),
                     SigningCredentials = new SigningCredentials(
                         signInKey, SecurityAlgorithms.HmacSha256Signature)
@@ -108,9 +119,22 @@ namespace App_API.Controllers
                 if(UserIdClaim is null)
                     return Unauthorized("User ID Claim is not found");
 
-                var result = await ProfileData(UserIdClaim.Value);
-                return result;
+                var user = await _userManager.FindByIdAsync(UserIdClaim.Value);
+                if (user == null) return NotFound();
 
+                var roles = await _userManager.GetRolesAsync(user);
+
+                return Ok(new
+                {
+                    user.Id,
+                    user.FirstName,
+                    user.LastName,
+                    user.FullName,
+                    user.Gender,
+                    user.Email,
+                    user.JoinAt,
+                    Roles = roles
+                });
             }
             catch (Exception)
             {

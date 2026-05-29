@@ -1,0 +1,184 @@
+using App_API.Data;
+using App_API.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace App_API.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize(Roles = "Admin,SuperAdmin")]
+    public class AdminController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+        private readonly UserManager<AppUser> _userManager;
+
+        public AdminController(AppDbContext context, UserManager<AppUser> userManager)
+        {
+            _context = context;
+            _userManager = userManager;
+        }
+
+        #region User Management (SuperAdmin Only)
+
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpGet("users")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var users = await _userManager.Users.ToListAsync();
+            var userList = new List<object>();
+
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+                userList.Add(new
+                {
+                    user.Id,
+                    user.FullName,
+                    user.Email,
+                    user.IsActive,
+                    user.JoinAt,
+                    Roles = roles
+                });
+            }
+
+            return Ok(userList);
+        }
+
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpPost("users/{userId}/toggle-status")]
+        public async Task<IActionResult> ToggleUserStatus(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return NotFound("User not found");
+
+            // Prevent super admin from disabling themselves
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser?.Id == user.Id) return BadRequest("You cannot disable your own account.");
+
+            user.IsActive = !user.IsActive;
+            await _userManager.UpdateAsync(user);
+
+            return Ok(new { message = $"User {(user.IsActive ? "activated" : "deactivated")} successfully", isActive = user.IsActive });
+        }
+
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpPost("create-admin")]
+        public async Task<IActionResult> CreateAdmin([FromBody] RegisterAdminDto model)
+        {
+            var existingUser = await _userManager.FindByEmailAsync(model.Email);
+            if (existingUser != null) return BadRequest("Email already in use");
+
+            var user = new AppUser
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                FullName = $"{model.FirstName} {model.LastName}".Trim(),
+                JoinAt = DateTime.UtcNow,
+                IsActive = true
+            };
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded) return BadRequest(result.Errors);
+
+            await _userManager.AddToRoleAsync(user, "Admin");
+
+            return Ok(new { message = "Admin account created successfully" });
+        }
+
+        #endregion
+
+        #region Supplier Management
+
+        [HttpGet("suppliers")]
+        public async Task<IActionResult> GetSuppliers()
+        {
+            return Ok(await _context.Suppliers.ToListAsync());
+        }
+
+        [HttpPost("suppliers")]
+        public async Task<IActionResult> CreateSupplier([FromBody] Supplier model)
+        {
+            model.Id = Guid.NewGuid();
+            model.JoinedAt = DateTime.UtcNow;
+            _context.Suppliers.Add(model);
+            await _context.SaveChangesAsync();
+            return Ok(model);
+        }
+
+        [HttpPut("suppliers/{id}")]
+        public async Task<IActionResult> UpdateSupplier(Guid id, [FromBody] Supplier model)
+        {
+            var supplier = await _context.Suppliers.FindAsync(id);
+            if (supplier == null) return NotFound();
+
+            supplier.CompanyName = model.CompanyName;
+            supplier.Country = model.Country;
+            supplier.City = model.City;
+            supplier.IsVerified = model.IsVerified;
+            supplier.WorldwideShipping = model.WorldwideShipping;
+
+            await _context.SaveChangesAsync();
+            return Ok(supplier);
+        }
+
+        [HttpDelete("suppliers/{id}")]
+        public async Task<IActionResult> DeleteSupplier(Guid id)
+        {
+            var supplier = await _context.Suppliers.FindAsync(id);
+            if (supplier == null) return NotFound();
+
+            _context.Suppliers.Remove(supplier);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Supplier deleted successfully" });
+        }
+
+        #endregion
+
+        #region Dashboard Stats
+
+        [HttpGet("dashboard-stats")]
+        public async Task<IActionResult> GetDashboardStats()
+        {
+            var totalProducts = await _context.Products.CountAsync();
+            var totalOrders = await _context.Orders.CountAsync();
+            var totalUsers = await _context.AppUsers.CountAsync();
+            var totalSales = await _context.Orders.SumAsync(o => o.Total);
+            var recentOrders = await _context.Orders
+                .Include(o => o.User)
+                .OrderByDescending(o => o.OrderDate)
+                .Take(5)
+                .Select(o => new {
+                    o.Id,
+                    Customer = o.User.FullName,
+                    TotalAmount = o.Total,
+                    o.Status,
+                    o.OrderDate
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                totalProducts,
+                totalOrders,
+                totalUsers,
+                totalSales,
+                recentOrders
+            });
+        }
+
+        #endregion
+    }
+
+    public class RegisterAdminDto
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+    }
+}
