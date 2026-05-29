@@ -1,0 +1,44 @@
+
+App API/.vs
+
+App API/App API/bin
+
+App API/App API/Migrations
+
+App API/App API/obj
+
+*.db
+
+# Visual Studio Code
+.vscode/
+*.db-shm
+*.db-wal
+
+DHC-Ecommerce-Fullstack-Design/dist
+
+DHC-Ecommerce-Fullstack-Design/node_modules
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
