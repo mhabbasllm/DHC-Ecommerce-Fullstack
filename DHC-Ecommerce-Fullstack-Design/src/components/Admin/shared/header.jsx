@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Menu, Search, Bell, Clock, CheckCircle } from 'lucide-react';
 import { useAuth } from '../../Auth/AuthContext';
+import adminService from '../../../services/adminService';
 
 const AdminHeader = ({ setSidebarOpen, activeTab, notifications = [], setNotifications, setActiveTab }) => {
   const { user } = useAuth();
@@ -26,12 +27,22 @@ const AdminHeader = ({ setSidebarOpen, activeTab, notifications = [], setNotific
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+  const markAllAsRead = async () => {
+    try {
+      await adminService.markAllNotificationsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error('Failed to mark all as read:', err);
+    }
   };
 
-  const markAsRead = (id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+  const markAsRead = async (id) => {
+    try {
+      await adminService.markNotificationRead(id);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    } catch (err) {
+      console.error('Failed to mark as read:', err);
+    }
   };
 
   return (
@@ -69,7 +80,7 @@ const AdminHeader = ({ setSidebarOpen, activeTab, notifications = [], setNotific
           >
             <Bell size={22} />
             {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 px-1.5 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white">
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white ring-1 ring-red-200">
                 {unreadCount}
               </span>
             )}

@@ -1,5 +1,5 @@
-import React from 'react';
 import { Bell, Clock, CheckCircle, Trash2, Tag, ShoppingBag, Shield } from 'lucide-react';
+import adminService from '../../services/adminService';
 
 const NotificationsList = ({ notifications, setNotifications }) => {
     const markAsRead = async (id) => {
