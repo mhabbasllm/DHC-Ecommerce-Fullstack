@@ -150,27 +150,26 @@ namespace App_API.Controllers
         {
             try
             {
-                // IdentityDbContext provides 'Users', no need for 'AppUsers' DbSet conflict
+                // Basic counts
                 var totalProducts = await _context.Products.CountAsync();
                 var totalOrders = await _context.Orders.CountAsync();
                 var totalUsers = await _userManager.Users.CountAsync();
                 
-                Console.WriteLine($"Dashboard Stats Debug - Products: {totalProducts}, Orders: {totalOrders}, Users: {totalUsers}");
-
+                // Calculate sales - handle empty case explicitly
                 decimal totalSales = 0;
                 if (totalOrders > 0)
                 {
-                    totalSales = await _context.Orders.SumAsync(o => (decimal?)o.Total) ?? 0;
+                    totalSales = await _context.Orders.SumAsync(o => o.Total);
                 }
 
+                // Recent orders with safety checks
                 var recentOrders = await _context.Orders
-                    .Include(o => o.User)
                     .OrderByDescending(o => o.OrderDate)
                     .Take(5)
                     .Select(o => new {
                         o.Id,
                         Customer = o.User != null ? o.User.FullName : "Guest",
-                        TotalAmount = o.Total,
+                        totalAmount = o.Total, // Match frontend naming convention (camelCase)
                         o.Status,
                         o.OrderDate
                     })
@@ -187,12 +186,20 @@ namespace App_API.Controllers
             }
             catch (Exception ex)
             {
-                // Log detailed error for debugging
-                Console.WriteLine($"Dashboard Stats Error: {ex}");
+                // Detailed server-side logging
+                Console.WriteLine("DASHBOARD STATS ERROR LOG START");
+                Console.WriteLine($"Message: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
+                Console.WriteLine("DASHBOARD STATS ERROR LOG END");
+
                 return StatusCode(500, new { 
                     error = "Failed to fetch dashboard statistics",
                     details = ex.Message,
-                    hint = "Ensure database migrations are applied: 'dotnet ef database update'" 
+                    hint = "Check server logs for full stack trace."
                 });
             }
         }
