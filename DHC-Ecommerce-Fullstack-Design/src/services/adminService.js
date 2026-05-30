@@ -1,6 +1,9 @@
 import authService from '../components/Auth/authService';
 
-const API_URL = 'https://localhost:7081/api/Admin'; // Adjust port if needed
+const API_ROOT = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5237/api')
+    .replace(/\/+$/, '')
+    .replace(/\/Auth$/i, '');
+const API_URL = `${API_ROOT}/Admin`;
 
 const adminService = {
     getDashboardStats: async () => {
@@ -60,6 +63,16 @@ const adminService = {
         return await response.json();
     },
 
+    getOrders: async () => {
+        const response = await fetch(`${API_URL}/orders`, {
+            headers: {
+                'Authorization': `Bearer ${authService.getToken()}`
+            }
+        });
+        if (!response.ok) throw new Error('Failed to fetch orders');
+        return await response.json();
+    },
+
     // User Management (SuperAdmin)
     getAllUsers: async () => {
         const response = await fetch(`${API_URL}/users`, {
@@ -98,6 +111,19 @@ const adminService = {
             const error = await response.json();
             throw error;
         }
+        return await response.json();
+    },
+
+    updateOrderStatus: async (orderId, status) => {
+        const response = await fetch(`${API_URL}/orders/${orderId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authService.getToken()}`
+            },
+            body: JSON.stringify(status)
+        });
+        if (!response.ok) throw new Error('Failed to update order status');
         return await response.json();
     }
 };

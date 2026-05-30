@@ -4,19 +4,14 @@ import { useAuth } from '../../Auth/AuthContext';
 
 const AdminSidebar = ({ isSidebarOpen, setSidebarOpen, activeTab, setActiveTab, onNavigate }) => {
   const { user, logout } = useAuth();
-  const roles = user?.roles || [];
-  const isSuperAdmin = roles.includes('SuperAdmin');
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
     { id: 'products', label: 'Products', icon: <Package size={20} /> },
     { id: 'orders', label: 'Orders', icon: <ShoppingCart size={20} /> },
     { id: 'suppliers', label: 'Suppliers', icon: <Truck size={20} /> },
+    { id: 'users', label: 'System Access', icon: <ShieldAlert size={20} /> },
   ];
-
-  if (isSuperAdmin) {
-    navItems.push({ id: 'users', label: 'System Access', icon: <ShieldAlert size={20} /> });
-  }
 
   const handleLogout = () => {
     logout();

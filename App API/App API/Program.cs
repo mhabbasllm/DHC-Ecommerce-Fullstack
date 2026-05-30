@@ -1,5 +1,6 @@
 using App_API.Data;
 using App_API.Models;
+using App_API.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 
 //builder.Services.AddCors(options =>
 //{
@@ -108,14 +110,20 @@ if (!app.Environment.IsDevelopment())
 }
 
 // 7. Enable CORS
-//app.UseCors("FrontendDev");
-app.UseCors(core => core.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+app.UseCors(core => core
+    .SetIsOriginAllowed(origin => true) // More flexible for SignalR
+    .AllowAnyHeader()
+    .AllowAnyMethod()
+    .AllowCredentials());
+
+app.UseStaticFiles();
 
 // 8. Activate Authentication & Authorization Pipelines
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<StoreHub>("/storeHub");
 
 
 

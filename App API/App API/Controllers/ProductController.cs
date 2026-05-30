@@ -17,6 +17,12 @@ namespace App_API.Controllers
             _context = context;
         }
 
+        private string? GetCurrentUserId()
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            return userId;
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetProducts(
             [FromQuery] string? search,
@@ -26,6 +32,7 @@ namespace App_API.Controllers
             [FromQuery] bool? freeShipping,
             [FromQuery] bool? verifiedSupplier,
             [FromQuery] string? sortBy, // "price_asc", "price_desc", "newest", "rating", "orders"
+            [FromQuery] string? ownerId, // Filter by admin owner
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 12)
         {
@@ -34,6 +41,12 @@ namespace App_API.Controllers
                 .Include(p => p.Supplier)
                 .Include(p => p.Specifications)
                 .AsQueryable();
+
+            // 0. Owner filter
+            if (!string.IsNullOrWhiteSpace(ownerId))
+            {
+                query = query.Where(p => p.CreatedByUserId == ownerId);
+            }
 
             // 1. Search filter
             if (!string.IsNullOrWhiteSpace(search))
@@ -236,7 +249,8 @@ namespace App_API.Controllers
                 IsNegotiable = model.IsNegotiable,
                 Warranty = model.Warranty,
                 CategoryId = model.CategoryId,
-                SupplierId = model.SupplierId
+                SupplierId = model.SupplierId,
+                CreatedByUserId = GetCurrentUserId()
             };
 
             _context.Products.Add(product);
@@ -268,6 +282,8 @@ namespace App_API.Controllers
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null) return NotFound("Product not found.");
+
+            var currentUserId = GetCurrentUserId();
 
             var categoryExists = await _context.Categories.AnyAsync(c => c.Id == model.CategoryId);
             if (!categoryExists) return BadRequest("Invalid Category ID.");
@@ -313,6 +329,8 @@ namespace App_API.Controllers
         {
             var product = await _context.Products.FindAsync(id);
             if (product == null) return NotFound("Product not found.");
+
+            var currentUserId = GetCurrentUserId();
 
             _context.Products.Remove(product);
             await _context.SaveChangesAsync();

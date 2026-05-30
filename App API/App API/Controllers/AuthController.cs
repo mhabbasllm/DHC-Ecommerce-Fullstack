@@ -152,7 +152,7 @@ namespace App_API.Controllers
 
             try
             {
-                var user = await _context.AppUsers
+                var user = await _userManager.Users
                     .Where(u => u.Id == id)
                     .Select(u => new
                     {

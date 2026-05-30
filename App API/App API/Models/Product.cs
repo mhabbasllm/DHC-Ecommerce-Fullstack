@@ -45,6 +45,9 @@ namespace App_API.Models
         public Guid SupplierId { get; set; }
         public Supplier Supplier { get; set; } = null!;
 
+        public string? CreatedByUserId { get; set; }
+        public AppUser? CreatedByUser { get; set; }
+
         public ICollection<ProductSpecification> Specifications { get; set; } = new List<ProductSpecification>();
         
         [JsonIgnore]

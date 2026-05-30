@@ -2,31 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { Package, Plus, Search, Edit2, Trash2, Tag, Box, DollarSign, Camera } from 'lucide-react';
 import { getProducts, createProduct, updateProduct, deleteProduct } from '../../services/productService';
 import adminService from '../../services/adminService';
+import authService from '../Auth/authService';
 import Swal from 'sweetalert2';
+
+import ProductForm from './ProductForm';
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [view, setView] = useState('list'); // 'list' or 'form'
   const [editingProduct, setEditingProduct] = useState(null);
-
-  // For dropdowns
   const [suppliers, setSuppliers] = useState([]);
-
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    price: '',
-    oldPrice: '',
-    imageUrl: '',
-    stockQuantity: '',
-    categoryId: 1, // Default to Hygiene for now or fetch list
-    supplierId: '',
-    freeShipping: false,
-    isNegotiable: false,
-    warranty: '1 Year Warranty'
-  });
 
   useEffect(() => {
     fetchData();
@@ -35,15 +22,16 @@ const AdminProducts = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+
+      // Fetch all products (no owner filtering)
+      const params = { pageSize: 100 };
+
       const [prodData, suppData] = await Promise.all([
-        getProducts({ pageSize: 100 }),
+        getProducts(params),
         adminService.getSuppliers()
       ]);
       setProducts(prodData.items);
       setSuppliers(suppData);
-      if (suppData.length > 0) {
-        setFormData(prev => ({ ...prev, supplierId: suppData[0].id }));
-      }
     } catch (error) {
       console.error('Data fetch failed:', error);
     } finally {
@@ -53,20 +41,7 @@ const AdminProducts = () => {
 
   const handleEdit = (product) => {
     setEditingProduct(product);
-    setFormData({
-      title: product.title,
-      description: product.description,
-      price: product.price,
-      oldPrice: product.oldPrice || '',
-      imageUrl: product.imageUrl,
-      stockQuantity: product.stockQuantity,
-      categoryId: 1, // You might need to fetch the actual ID
-      supplierId: suppliers.find(s => s.companyName === product.supplier?.companyName)?.id || suppliers[0]?.id || '',
-      freeShipping: product.freeShipping,
-      isNegotiable: product.isNegotiable,
-      warranty: product.warranty
-    });
-    setShowModal(true);
+    setView('form');
   };
 
   const handleDelete = async (id) => {
@@ -90,17 +65,8 @@ const AdminProducts = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleFormSubmit = async (payload) => {
     try {
-      const payload = {
-        ...formData,
-        price: parseFloat(formData.price),
-        oldPrice: formData.oldPrice ? parseFloat(formData.oldPrice) : null,
-        stockQuantity: parseInt(formData.stockQuantity),
-        thumbnailUrls: [formData.imageUrl]
-      };
-
       if (editingProduct) {
         await updateProduct(editingProduct.id, payload);
         Swal.fire('Updated!', 'Product saved.', 'success');
@@ -108,10 +74,11 @@ const AdminProducts = () => {
         await createProduct(payload);
         Swal.fire('Created!', 'Product added.', 'success');
       }
-      setShowModal(false);
-      fetchData(); // Refresh list to get accurate data
+      setView('list');
+      fetchData();
     } catch (error) {
-      Swal.fire('Error', 'Save failed.', 'error');
+      console.error('Save failed:', error);
+      throw error; // Re-throw to be handled by ProductForm
     }
   };
 
@@ -119,6 +86,17 @@ const AdminProducts = () => {
     p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.category?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (view === 'form') {
+    return (
+      <ProductForm
+        editingProduct={editingProduct}
+        suppliers={suppliers}
+        onClose={() => setView('list')}
+        onSubmit={handleFormSubmit}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -128,7 +106,7 @@ const AdminProducts = () => {
           <p className="text-sm text-gray-500">View and update your product catalog</p>
         </div>
         <button
-          onClick={() => { setEditingProduct(null); setShowModal(true); }}
+          onClick={() => { setEditingProduct(null); setView('form'); }}
           className="flex items-center justify-center gap-2 bg-brand-blue text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
         >
           <Plus size={20} />
@@ -205,123 +183,6 @@ const AdminProducts = () => {
           </table>
         </div>
       </div>
-
-      {/* Product Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowModal(false)}></div>
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0">
-              <h3 className="text-xl font-bold text-gray-900">{editingProduct ? 'Update Product' : 'Add New Product'}</h3>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
-            </div>
-            <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Left Side */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Product Title</label>
-                    <input
-                      type="text" required
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-blue"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Description</label>
-                    <textarea
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-blue h-32"
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    ></textarea>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Current Price</label>
-                      <input
-                        type="number" step="0.01" required
-                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-blue"
-                        value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Old Price (Optional)</label>
-                      <input
-                        type="number" step="0.01"
-                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-blue"
-                        value={formData.oldPrice}
-                        onChange={(e) => setFormData({ ...formData, oldPrice: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Side */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Image URL</label>
-                    <input
-                      type="text" required
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-blue"
-                      value={formData.imageUrl}
-                      onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-1">Supplier</label>
-                    <select
-                      className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-blue"
-                      value={formData.supplierId}
-                      onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
-                    >
-                      {suppliers.map(s => <option key={s.id} value={s.id}>{s.companyName}</option>)}
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Stock</label>
-                      <input
-                        type="number" required
-                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-blue"
-                        value={formData.stockQuantity}
-                        onChange={(e) => setFormData({ ...formData, stockQuantity: e.target.value })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-1">Warranty</label>
-                      <input
-                        type="text"
-                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-blue"
-                        value={formData.warranty}
-                        onChange={(e) => setFormData({ ...formData, warranty: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2 pt-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={formData.freeShipping} onChange={e => setFormData({ ...formData, freeShipping: e.target.checked })} className="rounded text-brand-blue" />
-                      <span className="text-sm font-medium text-gray-700">Free Shipping</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={formData.isNegotiable} onChange={e => setFormData({ ...formData, isNegotiable: e.target.checked })} className="rounded text-brand-blue" />
-                      <span className="text-sm font-medium text-gray-700">Price Negotiable</span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-4 pt-6 border-t border-gray-100 flex-shrink-0">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 px-4 py-3 border border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
-                <button type="submit" className="flex-1 px-4 py-3 bg-brand-blue text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-md">
-                  {editingProduct ? 'Save Product' : 'Add to Catalog'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

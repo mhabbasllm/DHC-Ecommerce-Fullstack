@@ -8,13 +8,11 @@ namespace App_API.Data
         private static readonly DateTime SeedDate = new DateTime(2026, 5, 26, 0, 0, 0, 0, DateTimeKind.Utc);
 
         // User and Role IDs
-        public const string SuperAdminId = "aaaaaaaa-1111-1111-1111-111111111111";
         public const string AdminId = "aaaaaaaa-2222-2222-2222-222222222222";
         public const string ProductManagerId = "aaaaaaaa-3333-3333-3333-333333333333";
         public const string CustomerSupportId = "aaaaaaaa-4444-4444-4444-444444444444";
         public const string DefaultAdminPassword = "Admin@123";
 
-        public const string SuperAdminRoleId = "1";
         public const string AdminRoleId = "2";
         public const string ProductManagerRoleId = "3";
         public const string CustomerSupportRoleId = "4";
@@ -41,7 +39,6 @@ namespace App_API.Data
         // Roles
         public static IdentityRole[] Roles => new[]
         {
-            new IdentityRole { Id = SuperAdminRoleId, Name = "SuperAdmin", NormalizedName = "SUPERADMIN" },
             new IdentityRole { Id = AdminRoleId, Name = "Admin", NormalizedName = "ADMIN" },
             new IdentityRole { Id = ProductManagerRoleId, Name = "ProductManager", NormalizedName = "PRODUCTMANAGER" },
             new IdentityRole { Id = CustomerSupportRoleId, Name = "CustomerSupport", NormalizedName = "CUSTOMERSUPPORT" },
@@ -53,32 +50,10 @@ namespace App_API.Data
         {
             new AppUser
             {
-                Id = SuperAdminId,
-                UserName = "superadmin@shopy.com",
-                NormalizedUserName = "SUPERADMIN@SHOPY.COM",
-                Email = "superadmin@shopy.com",
-                NormalizedEmail = "SUPERADMIN@SHOPY.COM",
-                EmailConfirmed = true,
-                PasswordHash = Hasher.HashPassword(null!, DefaultAdminPassword),
-                FirstName = "Super",
-                LastName = "Admin",
-                FullName = "Super Admin",
-                PhoneNumber = "+1234567890",
-                PhoneNumberConfirmed = true,
-                TwoFactorEnabled = false,
-                LockoutEnabled = true,
-                AccessFailedCount = 0,
-                SecurityStamp = "f4c9c8a0-e8b1-4b1a-9c1a-1a2b3c4d5e6e",
-                ConcurrencyStamp = "b4c9e2c7-1c4c-5c2b-ac2b-2b3c4d5e6f79",
-                JoinAt = SeedDate,
-                IsActive = true
-            },
-            new AppUser
-            {
                 Id = AdminId,
-                UserName = "Abbas_khan@shopyhub.com",
+                UserName = "abbas_khan@shopyhub.com",
                 NormalizedUserName = "ABBAS_KHAN@SHOPYHUB.COM",
-                Email = "Abbas_khan@shopyhub.com",
+                Email = "abbas_khan@shopyhub.com",
                 NormalizedEmail = "ABBAS_KHAN@SHOPYHUB.COM",
                 EmailConfirmed = true,
                 PasswordHash = Hasher.HashPassword(null!, DefaultAdminPassword),
@@ -144,8 +119,6 @@ namespace App_API.Data
         // User Roles Assignment
         public static IdentityUserRole<string>[] UserRoles => new[]
         {
-            new IdentityUserRole<string> { UserId = SuperAdminId, RoleId = SuperAdminRoleId },
-            new IdentityUserRole<string> { UserId = SuperAdminId, RoleId = AdminRoleId },
             new IdentityUserRole<string> { UserId = AdminId, RoleId = AdminRoleId },
             new IdentityUserRole<string> { UserId = ProductManagerId, RoleId = ProductManagerRoleId },
             new IdentityUserRole<string> { UserId = CustomerSupportId, RoleId = CustomerSupportRoleId }
@@ -211,6 +184,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 1,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -231,6 +205,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 1,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -251,6 +226,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 1,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -271,6 +247,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 1,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -291,6 +268,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 1,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -311,6 +289,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 1,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -331,6 +310,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 1,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -351,6 +331,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 1,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -371,6 +352,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 1,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -391,6 +373,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 1,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -411,6 +394,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -431,6 +415,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -451,6 +436,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -471,6 +457,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -491,6 +478,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -511,6 +499,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -531,6 +520,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -551,6 +541,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -571,6 +562,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -591,6 +583,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -611,6 +604,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -631,6 +625,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -651,6 +646,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -671,6 +667,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -691,6 +688,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 2,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -711,6 +709,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -731,6 +730,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -751,6 +751,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -771,6 +772,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -791,6 +793,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -811,6 +814,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -831,6 +835,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -851,6 +856,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -871,6 +877,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -891,6 +898,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -911,6 +919,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -931,6 +940,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -951,6 +961,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -971,6 +982,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -991,6 +1003,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 3,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1011,6 +1024,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 4,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1031,6 +1045,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 4,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1051,6 +1066,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 4,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1071,6 +1087,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 4,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1091,6 +1108,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 4,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1111,6 +1129,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 4,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1131,6 +1150,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 4,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1151,6 +1171,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 4,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1171,6 +1192,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 4,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1191,6 +1213,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 4,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1211,6 +1234,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 5,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1231,6 +1255,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 5,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1251,6 +1276,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 5,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1271,6 +1297,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 5,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1291,6 +1318,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 5,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1311,6 +1339,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 5,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1331,6 +1360,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 5,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1351,6 +1381,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 5,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1371,6 +1402,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 5,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1391,6 +1423,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 5,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1411,6 +1444,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 6,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1431,6 +1465,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 6,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1451,6 +1486,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 6,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1471,6 +1507,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 6,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1491,6 +1528,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 6,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1511,6 +1549,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 6,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1531,6 +1570,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 6,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1551,6 +1591,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 6,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1571,6 +1612,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 6,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1591,6 +1633,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 6,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1611,6 +1654,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 7,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1631,6 +1675,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 7,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1651,6 +1696,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 7,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1671,6 +1717,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 7,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1691,6 +1738,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 7,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1711,6 +1759,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 7,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1731,6 +1780,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 7,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1751,6 +1801,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 7,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1771,6 +1822,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 7,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1791,6 +1843,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 7,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1811,6 +1864,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 8,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1831,6 +1885,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 8,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1851,6 +1906,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 8,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1871,6 +1927,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 8,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1891,6 +1948,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 8,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1911,6 +1969,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 9,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1931,6 +1990,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 9,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1951,6 +2011,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 9,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -1971,6 +2032,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 9,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -1991,6 +2053,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 9,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -2011,6 +2074,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 9,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -2031,6 +2095,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 9,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -2051,6 +2116,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 9,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -2071,6 +2137,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 9,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -2091,6 +2158,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 9,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -2111,6 +2179,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 10,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -2131,6 +2200,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 10,
+                CreatedByUserId = AdminId,
                 SupplierId = TechZoneSupplierId
             },
             new Product
@@ -2151,6 +2221,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 10,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
             new Product
@@ -2191,6 +2262,7 @@ namespace App_API.Data
                 CreatedAt = SeedDate,
                 Warranty = "1 Year Warranty",
                 CategoryId = 10,
+                CreatedByUserId = AdminId,
                 SupplierId = GlobalSourcingSupplierId
             },
         };

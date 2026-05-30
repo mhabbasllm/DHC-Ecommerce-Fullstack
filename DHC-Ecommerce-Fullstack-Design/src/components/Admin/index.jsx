@@ -23,11 +23,14 @@ import {
 import AdminLayout from './layout';
 import AdminProducts from './products';
 import AdminSuppliers from './suppliers';
+import AdminOrders from './orders';
 import UserManagement from './userManagement';
 import adminService from '../../services/adminService';
+import NotificationsList from './NotificationsList';
+import signalRService from '../../services/signalRService';
 import { useAuth } from '../Auth/AuthContext';
+import Swal from 'sweetalert2';
 
-// Mock Data for Charts (Keep for UI placeholder if needed, or replace with real trend data if available)
 const revenueData = [
   { name: 'Jan', revenue: 4000, orders: 240 },
   { name: 'Feb', revenue: 3000, orders: 139 },
@@ -40,8 +43,7 @@ const revenueData = [
 
 const AdminDashboard = ({ onNavigate }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
-  const roles = user?.roles || [];
-  const isAdmin = roles.includes('Admin') || roles.includes('SuperAdmin');
+  const isAdmin = user?.roles?.includes('Admin');
 
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -53,12 +55,51 @@ const AdminDashboard = ({ onNavigate }) => {
     recentOrders: []
   });
   const [loading, setLoading] = useState(true);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    if (activeTab === 'dashboard' && isAdmin) {
-      fetchDashboardData();
+    if (isAdmin) {
+      signalRService.startConnection();
+
+      signalRService.onNewOrder((order) => {
+        // 1. Update stats real-time
+        setStats(prev => ({
+          ...prev,
+          totalOrders: prev.totalOrders + 1,
+          totalSales: prev.totalSales + order.amount,
+          recentOrders: [order, ...prev.recentOrders.slice(0, 4)]
+        }));
+
+        // 2. Add to notifications
+        setNotifications(prev => [{
+          id: Date.now(),
+          title: 'New Order Received',
+          message: `${order.customer} placed an order for $${order.amount.toFixed(2)}`,
+          time: new Date(),
+          isRead: false
+        }, ...prev]);
+
+        // 3. Show Toast
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'info',
+          title: 'New Order!',
+          text: `From ${order.customer}`,
+          showConfirmButton: false,
+          timer: 4000
+        });
+      });
+
+      if (activeTab === 'dashboard') {
+        fetchDashboardData();
+      }
     }
-  }, [activeTab, isAdmin]);
+
+    return () => {
+      // Don't necessarily stop connection if we want it to persist across tabs
+    };
+  }, [isAdmin, activeTab]);
 
   if (isLoading) return <div className="h-screen w-full flex items-center justify-center bg-gray-50 text-brand-blue font-bold">Verifying Access...</div>;
 
@@ -81,8 +122,8 @@ const AdminDashboard = ({ onNavigate }) => {
   const statCards = [
     { title: 'Total Revenue', value: `$${stats.totalSales?.toLocaleString() || '0'}`, increase: '+20.1%', icon: <DollarSign size={20} className="text-brand-blue" /> },
     { title: 'Orders', value: stats.totalOrders?.toLocaleString() || '0', increase: '+15.4%', icon: <ShoppingCart size={20} className="text-green-500" /> },
-    { title: 'Active Users', value: stats.totalUsers?.toLocaleString() || '0', increase: '+4.3%', icon: <Users size={20} className="text-orange-500" /> },
     { title: 'Total Products', value: stats.totalProducts?.toLocaleString() || '0', increase: '+2.1%', icon: <Package size={20} className="text-purple-500" /> },
+    { title: 'Active Users', value: stats.totalUsers?.toLocaleString() || '0', increase: '+4.3%', icon: <Users size={20} className="text-orange-500" /> }
   ];
 
   const getStatusColor = (status) => {
@@ -102,6 +143,8 @@ const AdminDashboard = ({ onNavigate }) => {
       activeTab={activeTab}
       setActiveTab={setActiveTab}
       onNavigate={onNavigate}
+      notifications={notifications}
+      setNotifications={setNotifications}
     >
       {/* ================= DASHBOARD TAB ================= */}
       {activeTab === 'dashboard' && (
@@ -126,7 +169,6 @@ const AdminDashboard = ({ onNavigate }) => {
             ))}
           </div>
 
-          {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-8">
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
               <div className="mb-4">
@@ -169,7 +211,6 @@ const AdminDashboard = ({ onNavigate }) => {
             </div>
           </div>
 
-          {/* Recent Orders Section */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-8">
             <div className="px-6 py-5 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-lg font-bold text-brand-dark">Recent Orders</h2>
@@ -224,11 +265,22 @@ const AdminDashboard = ({ onNavigate }) => {
       {/* ================= PRODUCTS TAB ================= */}
       {activeTab === 'products' && <AdminProducts />}
 
+      {/* ================= ORDERS TAB ================= */}
+      {activeTab === 'orders' && <AdminOrders />}
+
       {/* ================= SUPPLIERS TAB ================= */}
       {activeTab === 'suppliers' && <AdminSuppliers />}
 
-      {/* ================= USERS TAB ================= */}
-      {activeTab === 'users' && <UserManagement />}
+      {/* ================= SYSTEM ACCESS / USERS TAB ================= */}
+      {(activeTab === 'users' || activeTab === 'system access') && isAdmin && <UserManagement />}
+
+      {/* ================= NOTIFICATIONS TAB ================= */}
+      {activeTab === 'notifications' && (
+        <NotificationsList
+          notifications={notifications}
+          setNotifications={setNotifications}
+        />
+      )}
     </AdminLayout>
   );
 };

@@ -1,29 +1,33 @@
-using App_API.Data;
-using App_API.Models;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using App_API.Data;
+using App_API.Models;
+using App_API.Hubs;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 
 namespace App_API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin,SuperAdmin")]
+    [Authorize(Roles = "Admin")]
     public class AdminController : ControllerBase
     {
         private readonly AppDbContext _context;
         private readonly UserManager<AppUser> _userManager;
+        private readonly IHubContext<StoreHub> _hubContext;
 
-        public AdminController(AppDbContext context, UserManager<AppUser> userManager)
+        public AdminController(AppDbContext context, UserManager<AppUser> userManager, IHubContext<StoreHub> hubContext)
         {
             _context = context;
             _userManager = userManager;
+            _hubContext = hubContext;
         }
 
         #region User Management (SuperAdmin Only)
 
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "Admin")]
         [HttpGet("users")]
         public async Task<IActionResult> GetAllUsers()
         {
@@ -47,7 +51,7 @@ namespace App_API.Controllers
             return Ok(userList);
         }
 
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "Admin")]
         [HttpPost("users/{userId}/toggle-status")]
         public async Task<IActionResult> ToggleUserStatus(string userId)
         {
@@ -64,7 +68,7 @@ namespace App_API.Controllers
             return Ok(new { message = $"User {(user.IsActive ? "activated" : "deactivated")} successfully", isActive = user.IsActive });
         }
 
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "Admin")]
         [HttpPost("create-admin")]
         public async Task<IActionResult> CreateAdmin([FromBody] RegisterAdminDto model)
         {
@@ -144,31 +148,102 @@ namespace App_API.Controllers
         [HttpGet("dashboard-stats")]
         public async Task<IActionResult> GetDashboardStats()
         {
-            var totalProducts = await _context.Products.CountAsync();
-            var totalOrders = await _context.Orders.CountAsync();
-            var totalUsers = await _context.AppUsers.CountAsync();
-            var totalSales = await _context.Orders.SumAsync(o => o.Total);
-            var recentOrders = await _context.Orders
-                .Include(o => o.User)
-                .OrderByDescending(o => o.OrderDate)
-                .Take(5)
-                .Select(o => new {
-                    o.Id,
-                    Customer = o.User.FullName,
-                    TotalAmount = o.Total,
-                    o.Status,
-                    o.OrderDate
-                })
-                .ToListAsync();
-
-            return Ok(new
+            try
             {
-                totalProducts,
-                totalOrders,
-                totalUsers,
-                totalSales,
-                recentOrders
+                // IdentityDbContext provides 'Users', no need for 'AppUsers' DbSet conflict
+                var totalProducts = await _context.Products.CountAsync();
+                var totalOrders = await _context.Orders.CountAsync();
+                var totalUsers = await _userManager.Users.CountAsync();
+                
+                decimal totalSales = 0;
+                if (totalOrders > 0)
+                {
+                    totalSales = await _context.Orders.SumAsync(o => (decimal?)o.Total) ?? 0;
+                }
+
+                var recentOrders = await _context.Orders
+                    .Include(o => o.User)
+                    .OrderByDescending(o => o.OrderDate)
+                    .Take(5)
+                    .Select(o => new {
+                        o.Id,
+                        Customer = o.User != null ? o.User.FullName : "Guest",
+                        TotalAmount = o.Total,
+                        o.Status,
+                        o.OrderDate
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    totalProducts,
+                    totalOrders,
+                    totalUsers,
+                    totalSales,
+                    recentOrders
+                });
+            }
+            catch (Exception ex)
+            {
+                // Log detailed error for debugging
+                Console.WriteLine($"Dashboard Stats Error: {ex}");
+                return StatusCode(500, new { 
+                    error = "Failed to fetch dashboard statistics",
+                    details = ex.Message,
+                    hint = "Ensure database migrations are applied: 'dotnet ef database update'" 
+                });
+            }
+        }
+
+        [HttpGet("orders")]
+        public async Task<IActionResult> GetAdminOrders()
+        {
+            try
+            {
+                var orders = await _context.Orders
+                    .Include(o => o.User)
+                    .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                    .OrderByDescending(o => o.OrderDate)
+                    .Select(o => new {
+                        o.Id,
+                        o.OrderDate,
+                        CustomerName = o.User != null ? o.User.FullName : "Guest",
+                        CustomerEmail = o.User != null ? o.User.Email : "No Email",
+                        o.Status,
+                        o.ShippingAddress,
+                        TotalAmount = o.Total,
+                        ItemCount = o.OrderItems.Count
+                    })
+                    .ToListAsync();
+
+                return Ok(orders);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { 
+                    error = ex.Message 
+                });
+            }
+        }
+
+        [HttpPost("orders/{orderId}/status")]
+        public async Task<IActionResult> UpdateOrderStatus(Guid orderId, [FromBody] string status)
+        {
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order == null) return NotFound("Order not found.");
+
+            order.Status = status;
+            await _context.SaveChangesAsync();
+
+            // Notify user and admins of status update
+            await _hubContext.Clients.All.SendAsync("OrderStatusUpdated", new {
+                orderId = orderId,
+                status = order.Status,
+                userId = order.UserId
             });
+
+            return Ok(new { message = "Order status updated successfully", status = order.Status });
         }
 
         #endregion

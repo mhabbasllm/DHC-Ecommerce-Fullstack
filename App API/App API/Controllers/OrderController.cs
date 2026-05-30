@@ -1,9 +1,11 @@
 using System.Security.Claims;
 using App_API.Data;
 using App_API.Models;
+using App_API.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.SignalR;
 
 namespace App_API.Controllers
 {
@@ -13,10 +15,12 @@ namespace App_API.Controllers
     public class OrderController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IHubContext<StoreHub> _hubContext;
 
-        public OrderController(AppDbContext context)
+        public OrderController(AppDbContext context, IHubContext<StoreHub> hubContext)
         {
             _context = context;
+            _hubContext = hubContext;
         }
 
         private string GetCurrentUserId()
@@ -185,6 +189,17 @@ namespace App_API.Controllers
                 _context.CartItems.RemoveRange(cartItems);
 
                 await _context.SaveChangesAsync();
+
+                // Notify Admins in Real-time
+                var currentUserName = User.FindFirst(ClaimTypes.Name)?.Value ?? User.FindFirst("fullName")?.Value ?? "A Customer";
+                await _hubContext.Clients.All.SendAsync("ReceiveNewOrder", new
+                {
+                    orderId = order.Id,
+                    customer = currentUserName,
+                    amount = order.Total,
+                    date = order.OrderDate,
+                    status = order.Status
+                });
 
                 return Ok(new
                 {

@@ -2,32 +2,35 @@ import React from 'react';
 import AdminSidebar from './shared/sidebar';
 import AdminHeader from './shared/header';
 
-const AdminLayout = ({ children, isSidebarOpen, setSidebarOpen, activeTab, setActiveTab, onNavigate }) => {
+const AdminLayout = ({ children, isSidebarOpen, setSidebarOpen, activeTab, setActiveTab, onNavigate, notifications, setNotifications }) => {
   return (
     <div className="min-h-screen bg-[#f1f5f9] flex font-sans">
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         ></div>
       )}
 
       {/* Sidebar */}
-      <AdminSidebar 
-        isSidebarOpen={isSidebarOpen} 
-        setSidebarOpen={setSidebarOpen} 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        onNavigate={onNavigate} 
+      <AdminSidebar
+        isSidebarOpen={isSidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onNavigate={onNavigate}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Top Header */}
-        <AdminHeader 
-          setSidebarOpen={setSidebarOpen} 
-          activeTab={activeTab} 
+        <AdminHeader
+          setSidebarOpen={setSidebarOpen}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          notifications={notifications}
+          setNotifications={setNotifications}
         />
 
         {/* Dashboard Content */}

@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Clock, CheckCircle2, ChevronDown, ChevronUp, ShoppingBag, MapPin, Calendar, CreditCard } from 'lucide-react';
 import orderService from '../services/orderService';
+import signalRService from '../services/signalRService';
+import { useAuth } from './Auth/AuthContext';
+import Swal from 'sweetalert2';
 
 const MyOrders = ({ onNavigate }) => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [expandedOrder, setExpandedOrder] = useState(null);
+    const { user } = useAuth();
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -22,7 +26,25 @@ const MyOrders = ({ onNavigate }) => {
         };
 
         fetchOrders();
-    }, []);
+
+        // SignalR: Listen for status updates
+        signalRService.startConnection();
+        signalRService.onOrderStatusUpdated((data) => {
+            if (data.userId === user?.id) {
+                setOrders(prev => prev.map(o => o.id === data.orderId ? { ...o, status: data.status } : o));
+
+                Swal.fire({
+                    toast: true,
+                    position: 'bottom-end',
+                    icon: 'info',
+                    title: 'Order Status Updated',
+                    text: `Your order #${data.orderId.substring(0, 8)} is now ${data.status}`,
+                    showConfirmButton: false,
+                    timer: 5000
+                });
+            }
+        });
+    }, [user?.id]);
 
     const toggleOrderDetails = (orderId) => {
         if (expandedOrder === orderId) {

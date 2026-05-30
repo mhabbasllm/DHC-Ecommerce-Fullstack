@@ -1,3 +1,5 @@
+import authService from '../components/Auth/authService';
+
 const API_ROOT = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5237/api')
   .replace(/\/+$/, '')
   .replace(/\/Auth$/i, '');
@@ -135,7 +137,7 @@ export const createProduct = async (productData) => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}` // Simple direct access for now or pass from caller
+      'Authorization': `Bearer ${authService.getToken()}`
     },
     body: JSON.stringify(productData)
   });
@@ -147,7 +149,7 @@ export const updateProduct = async (id, productData) => {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
+      'Authorization': `Bearer ${authService.getToken()}`
     },
     body: JSON.stringify(productData)
   });
@@ -158,9 +160,23 @@ export const deleteProduct = async (id) => {
   const response = await fetch(`${PRODUCT_URL}/${id}`, {
     method: 'DELETE',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
+      'Authorization': `Bearer ${authService.getToken()}`
     }
   });
   if (!response.ok) throw new Error('Failed to delete');
   return true;
+};
+
+export const uploadImage = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_ROOT}/Upload`, {
+    method: 'POST',
+    body: formData,
+    // Note: Don't set Content-Type header when using FormData, browser will do it with boundary
+  });
+
+  if (!response.ok) throw new Error('Upload failed');
+  return await response.json();
 };
