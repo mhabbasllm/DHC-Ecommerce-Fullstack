@@ -106,8 +106,8 @@ const Checkout = ({ onNavigate }) => {
     }
 
     return (
-        <div className="bg-gray-50 min-h-screen py-8 md:py-12">
-            <div className="container max-w-6xl">
+        <div className="bg-gray-50 min-h-screen py-8 md:py-12 px-6">
+            <div className="max-w-6xl mx-auto md:px-8">
                 {/* Header */}
                 <div className="flex items-center gap-3 mb-8">
                     <div className="w-10 h-10 bg-[#7c3aed] rounded-lg flex items-center justify-center text-white shadow-md">

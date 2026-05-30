@@ -2,16 +2,31 @@ import React from 'react';
 import { Bell, Clock, CheckCircle, Trash2, Tag, ShoppingBag, Shield } from 'lucide-react';
 
 const NotificationsList = ({ notifications, setNotifications }) => {
-    const markAsRead = (id) => {
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    const markAsRead = async (id) => {
+        try {
+            await adminService.markNotificationRead(id);
+            setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+        } catch (error) {
+            console.error('Failed to mark read:', error);
+        }
     };
 
-    const deleteNotification = (id) => {
-        setNotifications(prev => prev.filter(n => n.id !== id));
+    const deleteNotification = async (id) => {
+        try {
+            await adminService.deleteNotification(id);
+            setNotifications(prev => prev.filter(n => n.id !== id));
+        } catch (error) {
+            console.error('Failed to delete:', error);
+        }
     };
 
-    const markAllAsRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    const markAllAsRead = async () => {
+        try {
+            await adminService.markAllNotificationsRead();
+            setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        } catch (error) {
+            console.error('Failed to mark all read:', error);
+        }
     };
 
     const getIcon = (title) => {

@@ -125,6 +125,39 @@ const adminService = {
         });
         if (!response.ok) throw new Error('Failed to update order status');
         return await response.json();
+    },
+
+    // Persistent Notifications
+    getNotifications: async () => {
+        const response = await fetch(`${API_URL}/notifications`, {
+            headers: { 'Authorization': `Bearer ${authService.getToken()}` }
+        });
+        if (!response.ok) throw new Error('Failed to fetch notifications');
+        return await response.json();
+    },
+
+    markNotificationRead: async (id) => {
+        const response = await fetch(`${API_URL}/notifications/${id}/read`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authService.getToken()}` }
+        });
+        return response.ok;
+    },
+
+    markAllNotificationsRead: async () => {
+        const response = await fetch(`${API_URL}/notifications/mark-all-read`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authService.getToken()}` }
+        });
+        return response.ok;
+    },
+
+    deleteNotification: async (id) => {
+        const response = await fetch(`${API_URL}/notifications/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${authService.getToken()}` }
+        });
+        return response.ok;
     }
 };
 

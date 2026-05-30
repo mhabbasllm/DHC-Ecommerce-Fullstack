@@ -188,17 +188,28 @@ namespace App_API.Controllers
                 // Clear active cart items
                 _context.CartItems.RemoveRange(cartItems);
 
+                // Create persistent notification for admins
+                var currentUserName = User.FindFirst(ClaimTypes.Name)?.Value ?? User.FindFirst("fullName")?.Value ?? "A Customer";
+                var notification = new Notification
+                {
+                    Title = "New Order Received",
+                    Message = $"{currentUserName} placed an order for ${total:N2}.",
+                    Type = "Success",
+                    CreatedAt = DateTime.UtcNow,
+                    TargetUrl = $"/admin/orders"
+                };
+                _context.Notifications.Add(notification);
+
                 await _context.SaveChangesAsync();
 
                 // Notify Admins in Real-time
-                var currentUserName = User.FindFirst(ClaimTypes.Name)?.Value ?? User.FindFirst("fullName")?.Value ?? "A Customer";
                 await _hubContext.Clients.All.SendAsync("ReceiveNewOrder", new
                 {
-                    orderId = order.Id,
-                    customer = currentUserName,
-                    amount = order.Total,
-                    date = order.OrderDate,
-                    status = order.Status
+                    Id = order.Id.ToString(),
+                    Customer = currentUserName,
+                    TotalAmount = order.Total,
+                    OrderDate = order.OrderDate,
+                    Status = order.Status
                 });
 
                 return Ok(new

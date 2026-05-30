@@ -12,9 +12,10 @@ A high-performance, real-time Fullstack E-commerce platform built with **ASP.NET
 - **Auto-Seeding**: Automatic database seeding for roles, admin users, categories, and initial product catalog.
 
 ### 📊 Admin Dashboard (Real-Time)
+- **Persistent Routing**: Deep linking for admin tabs (e.g., `/admin/products`) ensures the view is maintained after page refreshes.
 - **Live Statistics**: Dynamic dashboard showing total sales, order counts, and user growth without page refreshes.
 - **SignalR Integration**: Instant notifications for new orders and system activities.
-- **Notification Center**: Dedicated center to manage alerts, mark as read, or clear history.
+- **Persistent Notification Center**: Database-driven management to track system alerts across sessions.
 - **Standalone Inventory Management**: A premium, full-page product management system (Add/Edit/Delete) with high-quality image previews.
 
 ### 🛒 Customer Experience
@@ -28,7 +29,7 @@ A high-performance, real-time Fullstack E-commerce platform built with **ASP.NET
 
 ### **Backend**
 - **Framework**: .NET 8 Web API
-- **Database**: SQL Server
+- **Database**: SQLite (Development) / SQL Server (Production Ready)
 - **ORM**: Entity Framework Core (Code First)
 - **Real-Time**: ASP.NET Core SignalR
 - **Security**: JWT Bearer Token, ASP.NET Identity
@@ -36,8 +37,9 @@ A high-performance, real-time Fullstack E-commerce platform built with **ASP.NET
 ### **Frontend**
 - **Library**: React 18
 - **Build Tool**: Vite
+- **Routing**: Custom State-based Router with URL Persistence
 - **Icons**: Lucide React
-- **Notifications**: SweetAlert2, Toast alerts
+- **Notifications**: SweetAlert2, Persistent Notifications
 - **Styling**: Vanilla CSS & Tailwind CSS
 
 ---

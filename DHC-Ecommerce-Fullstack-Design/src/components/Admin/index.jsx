@@ -41,12 +41,12 @@ const revenueData = [
   { name: 'Jul', revenue: 7200, orders: 550 },
 ];
 
-const AdminDashboard = ({ onNavigate }) => {
+const AdminDashboard = ({ onNavigate, initialTab = 'dashboard' }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const isAdmin = user?.roles?.includes('Admin');
 
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [stats, setStats] = useState({
     totalProducts: 0,
     totalOrders: 0,
@@ -54,52 +54,67 @@ const AdminDashboard = ({ onNavigate }) => {
     totalSales: 0,
     recentOrders: []
   });
-  const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // URL sync for tabs
+  useEffect(() => {
+    if (initialTab && initialTab !== activeTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    onNavigate('admin', { adminTab: tabId });
+  };
 
   useEffect(() => {
     if (isAdmin) {
+      fetchDashboardData();
+      fetchNotifications();
+
       signalRService.startConnection();
 
       signalRService.onNewOrder((order) => {
         // 1. Update stats real-time
         setStats(prev => ({
           ...prev,
-          totalOrders: prev.totalOrders + 1,
-          totalSales: prev.totalSales + order.amount,
-          recentOrders: [order, ...prev.recentOrders.slice(0, 4)]
+          totalOrders: (prev.totalOrders || 0) + 1,
+          totalSales: (prev.totalSales || 0) + order.totalAmount,
+          recentOrders: [order, ...(prev.recentOrders || []).slice(0, 4)]
         }));
 
-        // 2. Add to notifications
-        setNotifications(prev => [{
-          id: Date.now(),
+        // 2. Add to notifications state (Backend already saved it)
+        const newNotif = {
+          id: Date.now(), // Temporary ID for UI
           title: 'New Order Received',
-          message: `${order.customer} placed an order for $${order.amount.toFixed(2)}`,
+          message: `${order.customer || 'A customer'} placed an order for $${(order.totalAmount || 0).toFixed(2)}`,
           time: new Date(),
           isRead: false
-        }, ...prev]);
+        };
+        setNotifications(prev => [newNotif, ...prev]);
 
         // 3. Show Toast
         Swal.fire({
           toast: true,
           position: 'top-end',
-          icon: 'info',
-          title: 'New Order!',
-          text: `From ${order.customer}`,
+          icon: 'success',
+          title: 'Order Received!',
+          text: `From ${order.customer || 'Customer'}`,
           showConfirmButton: false,
           timer: 4000
         });
       });
-
-      if (activeTab === 'dashboard') {
-        fetchDashboardData();
-      }
     }
+  }, [isAdmin]);
 
-    return () => {
-      // Don't necessarily stop connection if we want it to persist across tabs
-    };
-  }, [isAdmin, activeTab]);
+  // Refetch when tab changes to dashboard
+  useEffect(() => {
+    if (isAdmin && activeTab === 'dashboard') {
+      fetchDashboardData();
+    }
+  }, [activeTab]);
 
   if (isLoading) return <div className="h-screen w-full flex items-center justify-center bg-gray-50 text-brand-blue font-bold">Verifying Access...</div>;
 
@@ -111,7 +126,9 @@ const AdminDashboard = ({ onNavigate }) => {
     try {
       setLoading(true);
       const data = await adminService.getDashboardStats();
-      setStats(data);
+      if (data) {
+        setStats(data);
+      }
     } catch (error) {
       console.error('Failed to fetch dashboard stats:', error);
     } finally {
@@ -119,11 +136,25 @@ const AdminDashboard = ({ onNavigate }) => {
     }
   };
 
+  const fetchNotifications = async () => {
+    try {
+      const data = await adminService.getNotifications();
+      // Map backend model to frontend naming 'time'
+      const formatted = data.map(n => ({
+        ...n,
+        time: n.createdAt
+      }));
+      setNotifications(formatted);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    }
+  };
+
   const statCards = [
-    { title: 'Total Revenue', value: `$${stats.totalSales?.toLocaleString() || '0'}`, increase: '+20.1%', icon: <DollarSign size={20} className="text-brand-blue" /> },
-    { title: 'Orders', value: stats.totalOrders?.toLocaleString() || '0', increase: '+15.4%', icon: <ShoppingCart size={20} className="text-green-500" /> },
-    { title: 'Total Products', value: stats.totalProducts?.toLocaleString() || '0', increase: '+2.1%', icon: <Package size={20} className="text-purple-500" /> },
-    { title: 'Active Users', value: stats.totalUsers?.toLocaleString() || '0', increase: '+4.3%', icon: <Users size={20} className="text-orange-500" /> }
+    { title: 'Total Revenue', value: `$${(stats.totalSales || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`, increase: '+20.1%', icon: <DollarSign size={20} className="text-brand-blue" /> },
+    { title: 'Orders', value: (stats.totalOrders || 0).toLocaleString(), increase: '+15.4%', icon: <ShoppingCart size={20} className="text-green-500" /> },
+    { title: 'Total Products', value: (stats.totalProducts || 0).toLocaleString(), increase: '+2.1%', icon: <Package size={20} className="text-purple-500" /> },
+    { title: 'Active Users', value: (stats.totalUsers || 0).toLocaleString(), increase: '+4.3%', icon: <Users size={20} className="text-orange-500" /> }
   ];
 
   const getStatusColor = (status) => {
@@ -141,7 +172,7 @@ const AdminDashboard = ({ onNavigate }) => {
       isSidebarOpen={isSidebarOpen}
       setSidebarOpen={setSidebarOpen}
       activeTab={activeTab}
-      setActiveTab={setActiveTab}
+      setActiveTab={handleTabChange}
       onNavigate={onNavigate}
       notifications={notifications}
       setNotifications={setNotifications}
@@ -237,7 +268,7 @@ const AdminDashboard = ({ onNavigate }) => {
                     <tr><td colSpan="5" className="px-6 py-10 text-center text-gray-500">No orders recently.</td></tr>
                   ) : stats.recentOrders.map((order, idx) => (
                     <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 font-bold text-brand-dark">#{order.id.substring(0, 8)}</td>
+                      <td className="px-6 py-4 font-bold text-brand-dark">#{order.id?.substring(0, 8) || 'N/A'}</td>
                       <td className="px-6 py-4 text-gray-600">
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold">

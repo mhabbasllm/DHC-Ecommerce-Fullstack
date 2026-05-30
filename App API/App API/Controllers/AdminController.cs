@@ -155,6 +155,8 @@ namespace App_API.Controllers
                 var totalOrders = await _context.Orders.CountAsync();
                 var totalUsers = await _userManager.Users.CountAsync();
                 
+                Console.WriteLine($"Dashboard Stats Debug - Products: {totalProducts}, Orders: {totalOrders}, Users: {totalUsers}");
+
                 decimal totalSales = 0;
                 if (totalOrders > 0)
                 {
@@ -244,6 +246,51 @@ namespace App_API.Controllers
             });
 
             return Ok(new { message = "Order status updated successfully", status = order.Status });
+        }
+
+        #endregion
+
+        #region Notifications
+
+        [HttpGet("notifications")]
+        public async Task<IActionResult> GetNotifications()
+        {
+            var notifications = await _context.Notifications
+                .OrderByDescending(n => n.CreatedAt)
+                .Take(50)
+                .ToListAsync();
+            return Ok(notifications);
+        }
+
+        [HttpPost("notifications/{id}/read")]
+        public async Task<IActionResult> MarkNotificationAsRead(int id)
+        {
+            var notification = await _context.Notifications.FindAsync(id);
+            if (notification == null) return NotFound();
+
+            notification.IsRead = true;
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpPost("notifications/mark-all-read")]
+        public async Task<IActionResult> MarkAllNotificationsAsRead()
+        {
+            var unread = await _context.Notifications.Where(n => !n.IsRead).ToListAsync();
+            unread.ForEach(n => n.IsRead = true);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+        [HttpDelete("notifications/{id}")]
+        public async Task<IActionResult> DeleteNotification(int id)
+        {
+            var notification = await _context.Notifications.FindAsync(id);
+            if (notification == null) return NotFound();
+
+            _context.Notifications.Remove(notification);
+            await _context.SaveChangesAsync();
+            return Ok();
         }
 
         #endregion
