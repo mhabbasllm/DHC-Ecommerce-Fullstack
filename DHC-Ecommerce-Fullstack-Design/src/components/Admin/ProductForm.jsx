@@ -10,6 +10,7 @@ const ProductForm = ({ editingProduct, suppliers, onSubmit, onClose }) => {
         price: '',
         oldPrice: '',
         imageUrl: '',
+        thumbnailUrls: [],
         stockQuantity: '',
         categoryId: 1,
         supplierId: suppliers[0]?.id || '',
@@ -21,6 +22,7 @@ const ProductForm = ({ editingProduct, suppliers, onSubmit, onClose }) => {
     const [imageSource, setImageSource] = useState('link'); // 'link' or 'upload'
     const [selectedFile, setSelectedFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState('');
+    const [thumbnailInput, setThumbnailInput] = useState('');
     const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
@@ -31,6 +33,7 @@ const ProductForm = ({ editingProduct, suppliers, onSubmit, onClose }) => {
                 price: editingProduct.price,
                 oldPrice: editingProduct.oldPrice || '',
                 imageUrl: editingProduct.imageUrl,
+                thumbnailUrls: editingProduct.thumbnailUrls?.length ? editingProduct.thumbnailUrls : [editingProduct.imageUrl].filter(Boolean),
                 stockQuantity: editingProduct.stockQuantity,
                 categoryId: 1,
                 supplierId: suppliers.find(s => s.companyName === editingProduct.supplier?.companyName)?.id || suppliers[0]?.id || '',
@@ -46,6 +49,28 @@ const ProductForm = ({ editingProduct, suppliers, onSubmit, onClose }) => {
             setFormData(prev => prev.supplierId ? prev : { ...prev, supplierId: suppliers[0].id });
         }
     }, [editingProduct, suppliers]);
+
+    const addThumbnailUrl = () => {
+        const nextUrl = thumbnailInput.trim();
+        if (!nextUrl) return;
+
+        setFormData(prev => ({
+            ...prev,
+            thumbnailUrls: Array.from(new Set([...(prev.thumbnailUrls || []), nextUrl]))
+        }));
+        setThumbnailInput('');
+    };
+
+    const removeThumbnailUrl = (url) => {
+        setFormData(prev => ({
+            ...prev,
+            thumbnailUrls: (prev.thumbnailUrls || []).filter(item => item !== url)
+        }));
+
+        if (previewUrl === url) {
+            setPreviewUrl(formData.imageUrl || '');
+        }
+    };
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -86,7 +111,7 @@ const ProductForm = ({ editingProduct, suppliers, onSubmit, onClose }) => {
                 price: parseFloat(formData.price),
                 oldPrice: formData.oldPrice ? parseFloat(formData.oldPrice) : null,
                 stockQuantity: parseInt(formData.stockQuantity),
-                thumbnailUrls: [finalImageUrl]
+                thumbnailUrls: Array.from(new Set([finalImageUrl, ...(formData.thumbnailUrls || [])].filter(Boolean)))
             };
 
             await onSubmit(payload);
@@ -250,6 +275,60 @@ const ProductForm = ({ editingProduct, suppliers, onSubmit, onClose }) => {
                                         {selectedFile && <p className="text-xs text-gray-500 mt-2 text-center font-medium italic">Selected: {selectedFile.name}</p>}
                                     </div>
                                 )}
+
+                                <div className="mt-6 space-y-3">
+                                    <label className="block text-xs font-bold text-gray-500 ml-1">Thumbnail Images</label>
+                                    <div className="flex flex-col sm:flex-row gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Paste thumbnail image URL..."
+                                            className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-blue transition-all text-sm"
+                                            value={thumbnailInput}
+                                            onChange={(e) => setThumbnailInput(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    addThumbnailUrl();
+                                                }
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={addThumbnailUrl}
+                                            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-brand-blue hover:bg-blue-50 transition-colors"
+                                        >
+                                            Add Thumbnail
+                                        </button>
+                                    </div>
+
+                                    {(formData.thumbnailUrls || []).length > 0 ? (
+                                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-3 pt-1">
+                                            {formData.thumbnailUrls.map((url) => (
+                                                <div
+                                                    key={url}
+                                                    className={`relative aspect-square rounded-xl border overflow-hidden bg-gray-50 group ${previewUrl === url ? 'border-brand-blue ring-2 ring-blue-100' : 'border-gray-200'}`}
+                                                >
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setPreviewUrl(url)}
+                                                        className="w-full h-full"
+                                                    >
+                                                        <img src={url} alt="" className="w-full h-full object-cover" />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeThumbnailUrl(url)}
+                                                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-gray-400 italic">Add optional extra images for the product gallery.</p>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-6 pt-4">
