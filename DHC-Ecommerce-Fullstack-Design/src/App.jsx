@@ -74,6 +74,44 @@ const parsePathToPage = (path) => {
   return '404';
 };
 
+const getDocumentTitle = (page) => {
+  const pageName = typeof page === 'string' ? page : page?.name;
+
+  if (pageName === 'admin') {
+    const tab = page?.adminTab || 'dashboard';
+    const action = page?.adminAction;
+    const tabTitles = {
+      dashboard: 'Dashboard',
+      products: 'Products',
+      orders: 'Orders',
+      suppliers: 'Suppliers',
+      users: 'System Access',
+      notifications: 'Notifications',
+    };
+    const actionTitles = {
+      new: tab === 'users' ? 'Add Employee' : `Add ${tab.slice(0, -1)}`,
+      edit: `Edit ${tab.slice(0, -1)}`,
+      details: 'Order Details',
+    };
+
+    return `${actionTitles[action] || tabTitles[tab] || 'Admin'} | AdminPro`;
+  }
+
+  const titles = {
+    home: 'Home | DHC Ecommerce',
+    products: 'Products | DHC Ecommerce',
+    'product-details': 'Product Details | DHC Ecommerce',
+    cart: 'Shopping Cart | DHC Ecommerce',
+    checkout: 'Checkout | DHC Ecommerce',
+    login: 'Login | DHC Ecommerce',
+    register: 'Register | DHC Ecommerce',
+    orders: 'My Orders | DHC Ecommerce',
+    404: '404 Page Not Found | DHC Ecommerce',
+  };
+
+  return titles[pageName] || 'DHC Ecommerce';
+};
+
 const AppContent = ({ currentPage, setCurrentPage, navigateTo }) => {
   const pageName = typeof currentPage === 'string' ? currentPage : currentPage?.name;
   const adminTab = currentPage?.adminTab || 'dashboard';
@@ -129,6 +167,10 @@ const App = () => {
     }
     return 'home';
   });
+
+  useEffect(() => {
+    document.title = getDocumentTitle(currentPage);
+  }, [currentPage]);
 
   const getPageName = (page) => typeof page === 'string' ? page : page?.name;
 
