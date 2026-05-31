@@ -1,23 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Shield, Power, Search, Key, Mail, CheckCircle, XCircle } from 'lucide-react';
+import { UserPlus, Shield, Power, Search, Mail } from 'lucide-react';
 import adminService from '../../services/adminService';
 import Swal from 'sweetalert2';
+import EmployeeForm from './EmployeeForm';
 
-const UserManagement = () => {
+const UserManagement = ({ onNavigate, routeAction }) => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [showAddModal, setShowAddModal] = useState(false);
-    const [newAdmin, setNewAdmin] = useState({
-        firstName: '',
-        lastName: '',
-        email: '',
-        password: ''
-    });
+    const [view, setView] = useState('list');
 
     useEffect(() => {
         fetchUsers();
     }, []);
+
+    useEffect(() => {
+        setView(routeAction === 'new' ? 'form' : 'list');
+    }, [routeAction]);
 
     const fetchUsers = async () => {
         try {
@@ -49,17 +48,16 @@ const UserManagement = () => {
         }
     };
 
-    const handleAddAdmin = async (e) => {
-        e.preventDefault();
+    const handleAddAdmin = async (newAdmin) => {
         try {
             await adminService.createAdmin(newAdmin);
-            Swal.fire('Success', 'New Admin account created successfully.', 'success');
-            setShowAddModal(false);
-            setNewAdmin({ firstName: '', lastName: '', email: '', password: '' });
+            Swal.fire('Success', 'New employee account created successfully.', 'success');
+            onNavigate('admin', { adminTab: 'users' });
             fetchUsers();
         } catch (error) {
-            const msg = error.message || (error[0] && error[0].description) || 'Failed to create admin';
+            const msg = error.message || (error[0] && error[0].description) || 'Failed to create employee';
             Swal.fire('Error', msg, 'error');
+            throw error;
         }
     };
 
@@ -67,6 +65,15 @@ const UserManagement = () => {
         u.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         u.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    if (view === 'form') {
+        return (
+            <EmployeeForm
+                onCancel={() => onNavigate('admin', { adminTab: 'users' })}
+                onSubmit={handleAddAdmin}
+            />
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -76,15 +83,14 @@ const UserManagement = () => {
                     <p className="text-sm text-gray-500">Manage administrator accounts and system permissions</p>
                 </div>
                 <button
-                    onClick={() => setShowAddModal(true)}
+                    onClick={() => onNavigate('admin', { adminTab: 'users', adminAction: 'new' })}
                     className="flex items-center justify-center gap-2 bg-brand-dark text-white px-4 py-2.5 rounded-lg hover:bg-gray-800 transition-colors shadow-sm"
                 >
                     <UserPlus size={20} />
-                    New Administrator
+                    Add Employee
                 </button>
             </div>
 
-            {/* Filter Bar */}
             <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center">
                 <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -98,7 +104,6 @@ const UserManagement = () => {
                 </div>
             </div>
 
-            {/* Users Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {loading ? (
                     <div className="col-span-full py-20 text-center text-gray-500">Loading user accounts...</div>
@@ -139,8 +144,8 @@ const UserManagement = () => {
                                 <button
                                     onClick={() => handleToggleStatus(user.id)}
                                     className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${user.isActive
-                                            ? 'text-red-500 hover:bg-red-50'
-                                            : 'text-green-600 hover:bg-green-50'
+                                        ? 'text-red-500 hover:bg-red-50'
+                                        : 'text-green-600 hover:bg-green-50'
                                         }`}
                                 >
                                     <Power size={16} />
@@ -151,90 +156,6 @@ const UserManagement = () => {
                     </div>
                 ))}
             </div>
-
-            {/* Add Admin Modal */}
-            {showAddModal && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowAddModal(false)}></div>
-                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-                        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-brand-dark flex items-center justify-center text-white">
-                                    <UserPlus size={16} />
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-900">New Administrator</h3>
-                            </div>
-                            <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
-                        </div>
-                        <form onSubmit={handleAddAdmin} className="p-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-dark transition-all"
-                                        value={newAdmin.firstName}
-                                        onChange={(e) => setNewAdmin({ ...newAdmin, firstName: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-dark transition-all"
-                                        value={newAdmin.lastName}
-                                        onChange={(e) => setNewAdmin({ ...newAdmin, lastName: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                                <input
-                                    type="email"
-                                    required
-                                    placeholder="admin@shopy.com"
-                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-dark transition-all"
-                                    value={newAdmin.email}
-                                    onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Initial Password</label>
-                                <div className="relative">
-                                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                    <input
-                                        type="password"
-                                        required
-                                        placeholder="••••••••"
-                                        className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-dark transition-all"
-                                        value={newAdmin.password}
-                                        onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
-                                    />
-                                </div>
-                                <p className="text-[10px] text-gray-500 mt-2 italic px-1">Must be at least 8 characters with 1 uppercase, 1 lowercase, 1 number and 1 special character.</p>
-                            </div>
-
-                            <div className="flex gap-3 pt-6">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowAddModal(false)}
-                                    className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-2.5 bg-brand-dark text-white rounded-lg text-sm font-bold hover:bg-gray-800 transition-colors shadow-sm"
-                                >
-                                    Create Account
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

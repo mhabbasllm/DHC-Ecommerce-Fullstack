@@ -41,7 +41,7 @@ const revenueData = [
   { name: 'Jul', revenue: 7200, orders: 550 },
 ];
 
-const AdminDashboard = ({ onNavigate, initialTab = 'dashboard' }) => {
+const AdminDashboard = ({ onNavigate, initialTab = 'dashboard', initialAction, initialId }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const isAdmin = user?.roles?.includes('Admin');
 
@@ -207,7 +207,7 @@ const AdminDashboard = ({ onNavigate, initialTab = 'dashboard' }) => {
                 <p className="text-xs text-gray-500">Monthly revenue for the current year</p>
               </div>
               <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <LineChart data={revenueData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
@@ -228,7 +228,7 @@ const AdminDashboard = ({ onNavigate, initialTab = 'dashboard' }) => {
                 <p className="text-xs text-gray-500">Monthly order volume</p>
               </div>
               <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                   <BarChart data={revenueData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#6b7280', fontSize: 12 }} dy={10} />
@@ -294,16 +294,16 @@ const AdminDashboard = ({ onNavigate, initialTab = 'dashboard' }) => {
       )}
 
       {/* ================= PRODUCTS TAB ================= */}
-      {activeTab === 'products' && <AdminProducts />}
+      {activeTab === 'products' && <AdminProducts onNavigate={onNavigate} routeAction={initialAction} routeId={initialId} />}
 
       {/* ================= ORDERS TAB ================= */}
-      {activeTab === 'orders' && <AdminOrders />}
+      {activeTab === 'orders' && <AdminOrders onNavigate={onNavigate} routeAction={initialAction} routeId={initialId} />}
 
       {/* ================= SUPPLIERS TAB ================= */}
-      {activeTab === 'suppliers' && <AdminSuppliers />}
+      {activeTab === 'suppliers' && <AdminSuppliers onNavigate={onNavigate} routeAction={initialAction} routeId={initialId} />}
 
       {/* ================= SYSTEM ACCESS / USERS TAB ================= */}
-      {(activeTab === 'users' || activeTab === 'system access') && isAdmin && <UserManagement />}
+      {(activeTab === 'users' || activeTab === 'system access') && isAdmin && <UserManagement onNavigate={onNavigate} routeAction={initialAction} />}
 
       {/* ================= NOTIFICATIONS TAB ================= */}
       {activeTab === 'notifications' && (

@@ -1,23 +1,55 @@
 import React, { useEffect, useState } from 'react';
-import { Package, Plus, Search, Edit2, Trash2, Tag, Box, DollarSign, Camera } from 'lucide-react';
-import { getProducts, createProduct, updateProduct, deleteProduct } from '../../services/productService';
+import { Package, Plus, Search, Edit2, Trash2, Box, Eye } from 'lucide-react';
+import { getProduct, getProducts, createProduct, updateProduct, deleteProduct } from '../../services/productService';
 import adminService from '../../services/adminService';
 import authService from '../Auth/authService';
 import Swal from 'sweetalert2';
 
 import ProductForm from './ProductForm';
 
-const AdminProducts = () => {
+const AdminProducts = ({ onNavigate, routeAction, routeId }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [view, setView] = useState('list'); // 'list' or 'form'
   const [editingProduct, setEditingProduct] = useState(null);
   const [suppliers, setSuppliers] = useState([]);
+  const [formLoading, setFormLoading] = useState(false);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  useEffect(() => {
+    if (routeAction === 'new') {
+      setEditingProduct(null);
+      setView('form');
+      return;
+    }
+
+    if (routeAction === 'edit' && routeId) {
+      const loadProduct = async () => {
+        try {
+          setFormLoading(true);
+          const product = products.find(p => p.id === routeId) || await getProduct(routeId);
+          setEditingProduct(product);
+          setView('form');
+        } catch (error) {
+          console.error('Failed to load product for editing:', error);
+          Swal.fire('Error', 'Product could not be loaded.', 'error');
+          goToList();
+        } finally {
+          setFormLoading(false);
+        }
+      };
+
+      loadProduct();
+      return;
+    }
+
+    setEditingProduct(null);
+    setView('list');
+  }, [routeAction, routeId, products]);
 
   const fetchData = async () => {
     try {
@@ -40,8 +72,11 @@ const AdminProducts = () => {
   };
 
   const handleEdit = (product) => {
-    setEditingProduct(product);
-    setView('form');
+    onNavigate('admin', { adminTab: 'products', adminAction: 'edit', adminId: product.id });
+  };
+
+  const goToList = () => {
+    onNavigate('admin', { adminTab: 'products' });
   };
 
   const handleDelete = async (id) => {
@@ -74,7 +109,7 @@ const AdminProducts = () => {
         await createProduct(payload);
         Swal.fire('Created!', 'Product added.', 'success');
       }
-      setView('list');
+      goToList();
       fetchData();
     } catch (error) {
       console.error('Save failed:', error);
@@ -88,11 +123,15 @@ const AdminProducts = () => {
   );
 
   if (view === 'form') {
+    if (formLoading) {
+      return <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-10 text-center text-gray-500">Loading product...</div>;
+    }
+
     return (
       <ProductForm
         editingProduct={editingProduct}
         suppliers={suppliers}
-        onClose={() => setView('list')}
+        onClose={goToList}
         onSubmit={handleFormSubmit}
       />
     );
@@ -106,7 +145,7 @@ const AdminProducts = () => {
           <p className="text-sm text-gray-500">View and update your product catalog</p>
         </div>
         <button
-          onClick={() => { setEditingProduct(null); setView('form'); }}
+          onClick={() => onNavigate('admin', { adminTab: 'products', adminAction: 'new' })}
           className="flex items-center justify-center gap-2 bg-brand-blue text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
         >
           <Plus size={20} />
@@ -173,6 +212,7 @@ const AdminProducts = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <button onClick={() => onNavigate('product-details', { productId: p.id })} className="p-2 text-gray-400 hover:text-brand-blue hover:bg-blue-50 rounded-lg transition-all"><Eye size={18} /></button>
                       <button onClick={() => handleEdit(p)} className="p-2 text-gray-400 hover:text-brand-blue hover:bg-blue-50 rounded-lg transition-all"><Edit2 size={18} /></button>
                       <button onClick={() => handleDelete(p.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={18} /></button>
                     </div>

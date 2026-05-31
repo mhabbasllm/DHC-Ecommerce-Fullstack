@@ -24,7 +24,7 @@ namespace App_API.Models
         public decimal DiscountAmount { get; set; } = 0.00m;
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal Tax { get; set; } = 14.00m;
+        public decimal Tax { get; set; } = 0.00m;
 
         [Required]
         [Column(TypeName = "decimal(18,2)")]

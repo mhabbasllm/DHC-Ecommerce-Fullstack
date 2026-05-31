@@ -144,8 +144,9 @@ namespace App_API.Controllers
                     }
                 }
 
-                decimal tax = 14.00m; // Flat tax as per standard setup
-                decimal total = subtotal - discountAmount + tax;
+                decimal taxableAmount = Math.Max(0.00m, subtotal - discountAmount);
+                decimal tax = Math.Round(taxableAmount * 0.05m, 2); // 5% tax
+                decimal total = taxableAmount + tax;
 
                 // Generate Order
                 var order = new Order

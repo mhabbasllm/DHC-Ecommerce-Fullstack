@@ -183,7 +183,7 @@ const MyOrders = ({ onNavigate }) => {
                                                         </div>
                                                     )}
                                                     <div className="flex justify-between text-sm">
-                                                        <span className="text-brand-gray">Tax</span>
+                                                        <span className="text-brand-gray">Tax (5%)</span>
                                                         <span className="font-bold text-brand-dark">${order.tax.toFixed(2)}</span>
                                                     </div>
                                                     <div className="border-t border-gray-50 pt-2 flex justify-between items-center mt-2">

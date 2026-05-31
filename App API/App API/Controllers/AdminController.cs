@@ -153,17 +153,18 @@ namespace App_API.Controllers
                 // Basic counts
                 var totalProducts = await _context.Products.CountAsync();
                 var totalOrders = await _context.Orders.CountAsync();
-                var totalUsers = await _userManager.Users.CountAsync();
-                
-                // Calculate sales - handle empty case explicitly
-                decimal totalSales = 0;
-                if (totalOrders > 0)
-                {
-                    totalSales = await _context.Orders.SumAsync(o => o.Total);
-                }
+                var totalUsers = await _userManager.Users.CountAsync(u => u.IsActive);
+
+                // SQLite cannot translate decimal Sum reliably, so aggregate the selected
+                // totals in memory after the database has returned only that column.
+                var orderTotals = await _context.Orders
+                    .Select(o => o.Total)
+                    .ToListAsync();
+                var totalSales = orderTotals.Sum();
 
                 // Recent orders with safety checks
                 var recentOrders = await _context.Orders
+                    .Include(o => o.User)
                     .OrderByDescending(o => o.OrderDate)
                     .Take(5)
                     .Select(o => new {
@@ -221,6 +222,9 @@ namespace App_API.Controllers
                         CustomerEmail = o.User != null ? o.User.Email : "No Email",
                         o.Status,
                         o.ShippingAddress,
+                        o.Subtotal,
+                        o.DiscountAmount,
+                        o.Tax,
                         TotalAmount = o.Total,
                         ItemCount = o.OrderItems.Count
                     })
@@ -232,6 +236,54 @@ namespace App_API.Controllers
             {
                 return StatusCode(500, new { 
                     error = ex.Message 
+                });
+            }
+        }
+
+        [HttpGet("orders/{orderId}")]
+        public async Task<IActionResult> GetAdminOrderDetails(Guid orderId)
+        {
+            try
+            {
+                var order = await _context.Orders
+                    .Include(o => o.User)
+                    .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Product)
+                    .Where(o => o.Id == orderId)
+                    .Select(o => new {
+                        o.Id,
+                        o.OrderDate,
+                        CustomerName = o.User != null ? o.User.FullName : "Guest",
+                        CustomerEmail = o.User != null ? o.User.Email : "No Email",
+                        o.Status,
+                        o.ShippingAddress,
+                        o.Subtotal,
+                        o.DiscountAmount,
+                        o.Tax,
+                        TotalAmount = o.Total,
+                        ItemCount = o.OrderItems.Count,
+                        Items = o.OrderItems.Select(oi => new {
+                            oi.Id,
+                            oi.ProductId,
+                            ProductTitle = oi.Product != null ? oi.Product.Title : "Deleted product",
+                            ImageUrl = oi.Product != null ? oi.Product.ImageUrl : null,
+                            oi.Quantity,
+                            oi.UnitPrice,
+                            oi.Size,
+                            oi.Color,
+                            oi.Material
+                        }).ToList()
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (order == null) return NotFound("Order not found.");
+
+                return Ok(order);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new {
+                    error = ex.Message
                 });
             }
         }

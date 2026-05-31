@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Lock,
     Truck,
@@ -21,6 +21,8 @@ const Checkout = ({ onNavigate }) => {
     const [orderPlaced, setOrderPlaced] = useState(false);
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
     const [error, setError] = useState('');
+    const [couponCode, setCouponCode] = useState('');
+    const [discountPercent, setDiscountPercent] = useState(0);
 
     const [formData, setFormData] = useState({
         fullName: '',
@@ -29,6 +31,30 @@ const Checkout = ({ onNavigate }) => {
         zipCode: '',
         phone: ''
     });
+
+    const discountAmount = cartTotal * discountPercent;
+    const taxableAmount = Math.max(0, cartTotal - discountAmount);
+    const tax = taxableAmount * 0.05;
+    const orderTotal = taxableAmount + tax;
+
+    useEffect(() => {
+        const savedCoupon = sessionStorage.getItem('checkoutCouponCode');
+        if (!savedCoupon) return;
+
+        const loadCoupon = async () => {
+            try {
+                const data = await orderService.validateCoupon(savedCoupon);
+                setCouponCode(savedCoupon);
+                setDiscountPercent(data.discountPercent / 100);
+            } catch (error) {
+                sessionStorage.removeItem('checkoutCouponCode');
+                setCouponCode('');
+                setDiscountPercent(0);
+            }
+        };
+
+        loadCoupon();
+    }, []);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -56,10 +82,11 @@ const Checkout = ({ onNavigate }) => {
 
             // 2. Perform Checkout
             const fullAddress = `${formData.fullName}, ${formData.address}, ${formData.city}, ${formData.zipCode}, Phone: ${formData.phone}`;
-            await orderService.placeOrder(fullAddress);
+            await orderService.placeOrder(fullAddress, couponCode || null);
 
             // 3. Success
             setOrderPlaced(true);
+            sessionStorage.removeItem('checkoutCouponCode');
             clearCart();
 
             Swal.fire({
@@ -278,12 +305,20 @@ const Checkout = ({ onNavigate }) => {
                                         <span className="font-bold text-brand-dark">${cartTotal.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between text-sm">
+                                        <span className="text-brand-gray">Discount{couponCode ? ` (${couponCode})` : ''}</span>
+                                        <span className="font-bold text-red-500">-${discountAmount.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-brand-gray">Tax (5%)</span>
+                                        <span className="font-bold text-brand-dark">${tax.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm">
                                         <span className="text-brand-gray">Shipping</span>
                                         <span className="font-bold text-green-500">Free</span>
                                     </div>
                                     <div className="border-t border-gray-100 pt-3 flex justify-between items-center">
                                         <span className="text-lg font-bold text-brand-dark">Total</span>
-                                        <span className="text-xl font-bold text-[#7c3aed]">${cartTotal.toFixed(2)}</span>
+                                        <span className="text-xl font-bold text-[#7c3aed]">${orderTotal.toFixed(2)}</span>
                                     </div>
                                 </div>
 

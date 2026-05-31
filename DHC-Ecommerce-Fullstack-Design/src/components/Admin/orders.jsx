@@ -3,16 +3,29 @@ import { ShoppingCart, Search, Eye, Filter, Download, Calendar, User, MapPin } f
 import adminService from '../../services/adminService';
 import { useAuth } from '../Auth/AuthContext';
 import Swal from 'sweetalert2';
+import OrderDetails from './OrderDetails';
 
-const AdminOrders = () => {
+const AdminOrders = ({ onNavigate, routeAction, routeId }) => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [detailsLoading, setDetailsLoading] = useState(false);
+    const [view, setView] = useState('list');
     const { user } = useAuth();
 
     useEffect(() => {
         fetchOrders();
     }, []);
+
+    useEffect(() => {
+        if (routeAction && routeId) {
+            handleLoadDetails(routeId);
+        } else {
+            setView('list');
+            setSelectedOrder(null);
+        }
+    }, [routeAction, routeId]);
 
     const fetchOrders = async () => {
         try {
@@ -44,6 +57,59 @@ const AdminOrders = () => {
         }
     };
 
+    const handleLoadDetails = async (orderId) => {
+        try {
+            setDetailsLoading(true);
+            setView('details');
+            const data = await adminService.getOrderDetails(orderId);
+            setSelectedOrder(data);
+        } catch (error) {
+            console.error('Failed to fetch order details:', error);
+            Swal.fire('Error', 'Could not load order details.', 'error');
+            setView('list');
+        } finally {
+            setDetailsLoading(false);
+        }
+    };
+
+    const handleViewDetails = (orderId) => {
+        onNavigate('admin', { adminTab: 'orders', adminAction: 'details', adminId: orderId });
+    };
+
+    const exportOrders = () => {
+        const headers = ['Order ID', 'Date', 'Customer', 'Email', 'Address', 'Items', 'Subtotal', 'Discount', 'Tax', 'Status', 'Total'];
+        const escapeCsv = (value) => {
+            const text = value === null || value === undefined ? '' : String(value);
+            return `"${text.replace(/"/g, '""')}"`;
+        };
+        const rows = filteredOrders.map((order) => [
+            order.id,
+            new Date(order.orderDate).toLocaleString(),
+            order.customerName,
+            order.customerEmail,
+            order.shippingAddress,
+            order.itemCount,
+            (order.subtotal || 0).toFixed(2),
+            (order.discountAmount || 0).toFixed(2),
+            (order.tax || 0).toFixed(2),
+            order.status,
+            (order.totalAmount || 0).toFixed(2)
+        ]);
+        const csv = [headers, ...rows]
+            .map((row) => row.map(escapeCsv).join(','))
+            .join('\n');
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `orders-report-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
     const getStatusColor = (status) => {
         switch (status) {
             case 'Delivered': return 'bg-green-100 text-green-700';
@@ -61,6 +127,18 @@ const AdminOrders = () => {
         o.status?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    if (view === 'details') {
+        return (
+            <OrderDetails
+                order={selectedOrder}
+                loading={detailsLoading}
+                onBack={() => {
+                    onNavigate('admin', { adminTab: 'orders' });
+                }}
+            />
+        );
+    }
+
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -71,7 +149,8 @@ const AdminOrders = () => {
                     </p>
                 </div>
                 <button
-                    onClick={() => { }}
+                    onClick={exportOrders}
+                    disabled={loading || filteredOrders.length === 0}
                     className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-50 transition-colors shadow-sm text-sm font-medium"
                 >
                     <Download size={18} />
@@ -112,6 +191,7 @@ const AdminOrders = () => {
                                 <th className="px-6 py-4 font-semibold">Order Details</th>
                                 <th className="px-6 py-4 font-semibold">Customer</th>
                                 <th className="px-6 py-4 font-semibold">Destination</th>
+                                <th className="px-6 py-4 font-semibold">Discount</th>
                                 <th className="px-6 py-4 font-semibold">Total Amount</th>
                                 <th className="px-6 py-4 font-semibold text-center">Status</th>
                                 <th className="px-6 py-4 font-semibold text-right">Actions</th>
@@ -119,9 +199,9 @@ const AdminOrders = () => {
                         </thead>
                         <tbody className="divide-y divide-gray-200 text-sm">
                             {loading ? (
-                                <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500 italic font-medium">Loading orders...</td></tr>
+                                <tr><td colSpan="7" className="px-6 py-10 text-center text-gray-500 italic font-medium">Loading orders...</td></tr>
                             ) : filteredOrders.length === 0 ? (
-                                <tr><td colSpan="6" className="px-6 py-10 text-center text-gray-500">No orders found.</td></tr>
+                                <tr><td colSpan="7" className="px-6 py-10 text-center text-gray-500">No orders found.</td></tr>
                             ) : filteredOrders.map((order) => (
                                 <tr key={order.id} className="hover:bg-gray-50 transition-colors group">
                                     <td className="px-6 py-4">
@@ -151,7 +231,13 @@ const AdminOrders = () => {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
+                                        <div className={`font-bold ${(order.discountAmount || 0) > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                                            -${(order.discountAmount || 0).toFixed(2)}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
                                         <div className="font-bold text-brand-dark text-lg">${order.totalAmount.toFixed(2)}</div>
+                                        <div className="text-[10px] text-gray-400">Tax ${(order.tax || 0).toFixed(2)}</div>
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <select
@@ -167,7 +253,10 @@ const AdminOrders = () => {
                                         </select>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button className="p-2 text-gray-400 hover:text-brand-blue hover:bg-blue-50 rounded-lg transition-all">
+                                        <button
+                                            onClick={() => handleViewDetails(order.id)}
+                                            className="p-2 text-gray-400 hover:text-brand-blue hover:bg-blue-50 rounded-lg transition-all"
+                                        >
                                             <Eye size={18} />
                                         </button>
                                     </td>

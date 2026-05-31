@@ -41,8 +41,9 @@ const Cart = ({ onNavigate }) => {
   // Math Calculations
   const subtotal = cartTotal || 0;
   const discountVal = couponApplied ? (subtotal * discountPercent) : 0;
-  const tax = subtotal > 0 ? 14.00 : 0.00;
-  const total = Math.max(0, subtotal - discountVal + tax);
+  const taxableAmount = Math.max(0, subtotal - discountVal);
+  const tax = taxableAmount * 0.05;
+  const total = taxableAmount + tax;
 
   // Handlers
   const handleQtyChange = (id, val) => {
@@ -152,7 +153,7 @@ const Cart = ({ onNavigate }) => {
 
                         {/* Text descriptions */}
                         <div className="flex flex-col flex-1">
-                          <h4 className="text-[14px] md:text-base font-medium md:font-semibold text-[#1c1c1c] md:text-brand-dark hover:text-brand-blue cursor-pointer transition-colors leading-snug line-clamp-2 pr-6 md:pr-0" onClick={() => onNavigate('product-details')}>
+                          <h4 className="text-[14px] md:text-base font-medium md:font-semibold text-[#1c1c1c] md:text-brand-dark hover:text-brand-blue cursor-pointer transition-colors leading-snug line-clamp-2 pr-6 md:pr-0" onClick={() => onNavigate('product-details', { productId: item.id })}>
                             {item.title}
                           </h4>
                           <span className="text-[12px] text-[#a5b2c7] mt-1 leading-tight select-none">
@@ -326,13 +327,13 @@ const Cart = ({ onNavigate }) => {
                 <span className="font-medium text-[#1c1c1c]">${subtotal.toFixed(2)}</span>
               </div>
               <div className="md:hidden flex justify-between items-center text-[#8b96a5]">
-                <span>Shipping:</span>
-                <span className="font-medium text-[#1c1c1c]">$10.00</span>
+                <span>Discount:</span>
+                <span className="font-medium text-[#eb001b]">-${discountVal.toFixed(2)}</span>
               </div>
 
               {/* Shared Tax */}
               <div className="flex justify-between items-center text-[#8b96a5] md:text-brand-gray">
-                <span>Tax:</span>
+                <span>Tax (5%):</span>
                 <span className="font-medium text-[#1c1c1c] md:text-brand-dark md:text-[#00b517] md:font-semibold">${tax.toFixed(2)}</span>
               </div>
 
@@ -347,7 +348,14 @@ const Cart = ({ onNavigate }) => {
 
               {/* Green checkout button */}
               <button
-                onClick={() => onNavigate('checkout')}
+                onClick={() => {
+                  if (couponApplied && couponCode) {
+                    sessionStorage.setItem('checkoutCouponCode', couponCode);
+                  } else {
+                    sessionStorage.removeItem('checkoutCouponCode');
+                  }
+                  onNavigate('checkout');
+                }}
                 className="bg-[#00b517] hover:bg-[#009b13] text-white rounded-md py-3 md:py-3 text-center font-bold text-[15px] md:text-base cursor-pointer shadow-sm transition-colors w-full mt-4 md:mt-4"
               >
                 <span className="hidden md:inline">Checkout</span>

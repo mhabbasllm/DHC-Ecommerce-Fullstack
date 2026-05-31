@@ -16,11 +16,69 @@ import { CartProvider } from './components/CartContext';
 import './App.css';
 
 const KNOWN_PAGES = ['home', 'products', 'product-details', 'cart', 'checkout', 'login', 'register', 'orders', 'admin'];
-const ADMIN_TABS = ['dashboard', 'products', 'orders', 'suppliers', 'users', 'notifications', 'system access'];
+const ADMIN_TABS = ['dashboard', 'products', 'orders', 'suppliers', 'users', 'notifications'];
+const ADMIN_ROUTE_ACTIONS = {
+  dashboard: [],
+  products: ['new', 'edit'],
+  orders: ['details'],
+  suppliers: ['new', 'edit'],
+  users: ['new'],
+  notifications: [],
+};
+
+const parseAdminPath = (path) => {
+  if (path === '/admin') return 'admin';
+
+  const parts = path.split('/').filter(Boolean).map(part => decodeURIComponent(part));
+  if (parts[0] !== 'admin') return null;
+
+  const adminTab = parts[1] || 'dashboard';
+  if (!ADMIN_TABS.includes(adminTab)) return '404';
+
+  const adminAction = parts[2];
+  const adminId = parts[3];
+  const hasExtraParts = parts.length > 4;
+  const allowedActions = ADMIN_ROUTE_ACTIONS[adminTab] || [];
+
+  if (hasExtraParts) return '404';
+  if (!adminAction) return { name: 'admin', adminTab };
+  if (!allowedActions.includes(adminAction)) return '404';
+  if (['edit', 'details'].includes(adminAction) && !adminId) return '404';
+  if (adminAction === 'new' && adminId) return '404';
+
+  return {
+    name: 'admin',
+    adminTab,
+    adminAction,
+    ...(adminId ? { adminId } : {})
+  };
+};
+
+const parsePathToPage = (path) => {
+  if (path === '/') return 'home';
+  if (path === '/products') return 'products';
+
+  const productDetailMatch = path.match(/^\/product-details\/([^/]+)$/);
+  if (productDetailMatch) return { name: 'product-details', productId: decodeURIComponent(productDetailMatch[1]) };
+
+  const adminPage = parseAdminPath(path);
+  if (adminPage) return adminPage;
+
+  if (path === '/cart') return 'cart';
+  if (path === '/checkout') return 'checkout';
+  if (path === '/orders') return 'orders';
+  if (path === '/login') return 'login';
+  if (path === '/register') return 'register';
+  if (path === '/404') return '404';
+
+  return '404';
+};
 
 const AppContent = ({ currentPage, setCurrentPage, navigateTo }) => {
   const pageName = typeof currentPage === 'string' ? currentPage : currentPage?.name;
   const adminTab = currentPage?.adminTab || 'dashboard';
+  const adminAction = currentPage?.adminAction;
+  const adminId = currentPage?.adminId;
   // Protected Routes
   const { user, isAuthenticated, isLoading } = useAuth();
   const roles = user?.roles || [];
@@ -56,7 +114,7 @@ const AppContent = ({ currentPage, setCurrentPage, navigateTo }) => {
         {pageName === 'login' && <Login onNavigate={navigateTo} redirectTo={currentPage?.redirectTo} />}
         {pageName === 'register' && <Register onNavigate={navigateTo} />}
         {pageName === 'orders' && isAuthenticated && <MyOrders onNavigate={navigateTo} />}
-        {pageName === 'admin' && <Admin onNavigate={navigateTo} initialTab={adminTab} />}
+        {pageName === 'admin' && <Admin onNavigate={navigateTo} initialTab={adminTab} initialAction={adminAction} initialId={adminId} />}
         {isUnknownPage && <NotFound onNavigate={navigateTo} />}
       </div>
       {pageName !== 'admin' && <Footer />}
@@ -67,27 +125,7 @@ const AppContent = ({ currentPage, setCurrentPage, navigateTo }) => {
 const App = () => {
   const [currentPage, setCurrentPage] = useState(() => {
     if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-      if (path === '/') return 'home';
-
-      if (path === '/products') return 'products';
-      const productDetailMatch = path.match(/^\/product-details\/([^/]+)$/);
-      if (productDetailMatch) return { name: 'product-details', productId: productDetailMatch[1] };
-
-      const adminMatch = path.match(/^\/admin\/([^/]+)$/);
-      if (path === '/admin') return 'admin';
-      if (adminMatch && ADMIN_TABS.includes(adminMatch[1])) {
-        return { name: 'admin', adminTab: adminMatch[1] };
-      }
-
-      if (path === '/product-details') return 'product-details';
-      if (path === '/cart') return 'cart';
-      if (path === '/checkout') return 'checkout';
-      if (path === '/orders') return 'orders';
-      if (path === '/login') return 'login';
-      if (path === '/register') return 'register';
-
-      return '404';
+      return parsePathToPage(window.location.pathname);
     }
     return 'home';
   });
@@ -100,29 +138,40 @@ const App = () => {
     const searchQuery = options.searchQuery || page?.searchQuery;
     const redirectTo = options.redirectTo || page?.redirectTo;
     const adminTab = options.adminTab || page?.adminTab;
+    const adminAction = options.adminAction || page?.adminAction;
+    const adminId = options.adminId || page?.adminId;
 
     let nextPage = pageName;
     if (pageName === 'product-details' && productId) {
       nextPage = { name: 'product-details', productId };
+    } else if (pageName === 'product-details') {
+      nextPage = '404';
     } else if (pageName === 'products' && searchQuery) {
       nextPage = { name: 'products', searchQuery };
     } else if (pageName === 'login' && redirectTo) {
       nextPage = { name: 'login', redirectTo };
     } else if (pageName === 'admin' && adminTab) {
       nextPage = { name: 'admin', adminTab };
+      if (adminAction) nextPage.adminAction = adminAction;
+      if (adminId) nextPage.adminId = adminId;
     }
 
     setCurrentPage(nextPage);
     let newPath = '/';
-    if (pageName === 'products') newPath = '/products';
-    else if (pageName === 'product-details') newPath = productId ? `/product-details/${productId}` : '/product-details';
+    const nextPageName = getPageName(nextPage);
+    if (nextPageName === 'products') newPath = '/products';
+    else if (nextPageName === 'product-details') newPath = `/product-details/${productId}`;
     else if (pageName === 'cart') newPath = '/cart';
     else if (pageName === 'checkout') newPath = '/checkout';
     else if (pageName === 'login') newPath = '/login';
     else if (pageName === 'register') newPath = '/register';
     else if (pageName === 'orders') newPath = '/orders';
-    else if (pageName === 'admin') newPath = adminTab ? `/admin/${adminTab}` : '/admin';
-    else if (pageName === '404') newPath = '/404';
+    else if (nextPageName === 'admin') {
+      newPath = adminTab ? `/admin/${adminTab}` : '/admin';
+      if (adminAction) newPath += `/${adminAction}`;
+      if (adminId) newPath += `/${adminId}`;
+    }
+    else if (nextPageName === '404') newPath = '/404';
 
     if (window.location.pathname !== newPath) {
       window.history.pushState({ page: nextPage }, '', newPath);
@@ -135,28 +184,7 @@ const App = () => {
       if (event.state && event.state.page) {
         setCurrentPage(event.state.page);
       } else {
-        const path = window.location.pathname;
-        if (path === '/') { setCurrentPage('home'); return; }
-
-        if (path === '/products') setCurrentPage('products');
-        else if (path === '/checkout') setCurrentPage('checkout');
-        else if (path.match(/^\/product-details\/([^/]+)$/)) {
-          const match = path.match(/^\/product-details\/([^/]+)$/);
-          setCurrentPage({ name: 'product-details', productId: match[1] });
-        }
-        else if (path.startsWith('/admin')) {
-          const match = path.match(/^\/admin\/([^/]+)$/);
-          if (match && ADMIN_TABS.includes(match[1])) {
-            setCurrentPage({ name: 'admin', adminTab: match[1] });
-          } else {
-            setCurrentPage('admin');
-          }
-        }
-        else if (path === '/cart') setCurrentPage('cart');
-        else if (path === '/login') setCurrentPage('login');
-        else if (path === '/register') setCurrentPage('register');
-        else if (path === '/orders') setCurrentPage('orders');
-        else setCurrentPage('404');
+        setCurrentPage(parsePathToPage(window.location.pathname));
       }
     };
 

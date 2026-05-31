@@ -2,24 +2,41 @@ import React, { useState, useEffect } from 'react';
 import { Truck, Plus, Search, Edit2, Trash2, Globe, ShieldCheck } from 'lucide-react';
 import adminService from '../../services/adminService';
 import Swal from 'sweetalert2';
+import SupplierForm from './SupplierForm';
 
-const AdminSuppliers = () => {
+const AdminSuppliers = ({ onNavigate, routeAction, routeId }) => {
     const [suppliers, setSuppliers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [showModal, setShowModal] = useState(false);
+    const [view, setView] = useState('list');
     const [editingSupplier, setEditingSupplier] = useState(null);
-    const [formData, setFormData] = useState({
-        companyName: '',
-        country: '',
-        city: '',
-        isVerified: false,
-        worldwideShipping: true
-    });
 
     useEffect(() => {
         fetchSuppliers();
     }, []);
+
+    useEffect(() => {
+        if (routeAction === 'new') {
+            setEditingSupplier(null);
+            setView('form');
+            return;
+        }
+
+        if (routeAction === 'edit' && routeId) {
+            const supplier = suppliers.find(s => s.id === routeId);
+            if (supplier) {
+                setEditingSupplier(supplier);
+                setView('form');
+            } else if (!loading) {
+                Swal.fire('Error!', 'Supplier could not be loaded.', 'error');
+                goToList();
+            }
+            return;
+        }
+
+        setEditingSupplier(null);
+        setView('list');
+    }, [routeAction, routeId, suppliers, loading]);
 
     const fetchSuppliers = async () => {
         try {
@@ -32,16 +49,16 @@ const AdminSuppliers = () => {
         }
     };
 
+    const handleAdd = () => {
+        onNavigate('admin', { adminTab: 'suppliers', adminAction: 'new' });
+    };
+
     const handleEdit = (supplier) => {
-        setEditingSupplier(supplier);
-        setFormData({
-            companyName: supplier.companyName,
-            country: supplier.country,
-            city: supplier.city,
-            isVerified: supplier.isVerified,
-            worldwideShipping: supplier.worldwideShipping
-        });
-        setShowModal(true);
+        onNavigate('admin', { adminTab: 'suppliers', adminAction: 'edit', adminId: supplier.id });
+    };
+
+    const goToList = () => {
+        onNavigate('admin', { adminTab: 'suppliers' });
     };
 
     const handleDelete = async (id) => {
@@ -66,8 +83,7 @@ const AdminSuppliers = () => {
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const handleSubmit = async (formData) => {
         try {
             if (editingSupplier) {
                 const updated = await adminService.updateSupplier(editingSupplier.id, formData);
@@ -78,11 +94,11 @@ const AdminSuppliers = () => {
                 setSuppliers(prev => [created, ...prev]);
                 Swal.fire('Success!', 'New supplier added.', 'success');
             }
-            setShowModal(false);
             setEditingSupplier(null);
-            setFormData({ companyName: '', country: '', city: '', isVerified: false, worldwideShipping: true });
+            goToList();
         } catch (error) {
             Swal.fire('Error!', 'Operation failed.', 'error');
+            throw error;
         }
     };
 
@@ -90,6 +106,19 @@ const AdminSuppliers = () => {
         s.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.country.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    if (view === 'form') {
+        return (
+            <SupplierForm
+                supplier={editingSupplier}
+                onCancel={() => {
+                    setEditingSupplier(null);
+                    goToList();
+                }}
+                onSubmit={handleSubmit}
+            />
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -99,7 +128,7 @@ const AdminSuppliers = () => {
                     <p className="text-sm text-gray-500">Manage your global distribution and sourcing network</p>
                 </div>
                 <button
-                    onClick={() => { setEditingSupplier(null); setShowModal(true); }}
+                    onClick={handleAdd}
                     className="flex items-center justify-center gap-2 bg-brand-blue text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
                 >
                     <Plus size={20} />
@@ -107,7 +136,6 @@ const AdminSuppliers = () => {
                 </button>
             </div>
 
-            {/* Filter Bar */}
             <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center">
                 <div className="relative flex-1 max-w-md">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -121,7 +149,6 @@ const AdminSuppliers = () => {
                 </div>
             </div>
 
-            {/* Suppliers Table */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse whitespace-nowrap">
@@ -195,88 +222,6 @@ const AdminSuppliers = () => {
                     </table>
                 </div>
             </div>
-
-            {/* Add/Edit Modal */}
-            {showModal && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/50" onClick={() => setShowModal(false)}></div>
-                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
-                        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                            <h3 className="text-lg font-bold text-gray-900">{editingSupplier ? 'Edit Supplier' : 'Add New Supplier'}</h3>
-                            <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">&times;</button>
-                        </div>
-                        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
-                                <input
-                                    type="text"
-                                    required
-                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-blue"
-                                    value={formData.companyName}
-                                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                                />
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-blue"
-                                        value={formData.country}
-                                        onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-brand-blue"
-                                        value={formData.city}
-                                        onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                            <div className="space-y-3 pt-2">
-                                <label className="flex items-center gap-2 cursor-pointer group">
-                                    <input
-                                        type="checkbox"
-                                        className="w-4 h-4 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
-                                        checked={formData.isVerified}
-                                        onChange={(e) => setFormData({ ...formData, isVerified: e.target.checked })}
-                                    />
-                                    <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">Verified Supplier</span>
-                                </label>
-                                <label className="flex items-center gap-2 cursor-pointer group">
-                                    <input
-                                        type="checkbox"
-                                        className="w-4 h-4 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
-                                        checked={formData.worldwideShipping}
-                                        onChange={(e) => setFormData({ ...formData, worldwideShipping: e.target.checked })}
-                                    />
-                                    <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">Supports Worldwide Shipping</span>
-                                </label>
-                            </div>
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowModal(false)}
-                                    className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-4 py-2.5 bg-brand-blue text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
-                                >
-                                    {editingSupplier ? 'Save Changes' : 'Create Supplier'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

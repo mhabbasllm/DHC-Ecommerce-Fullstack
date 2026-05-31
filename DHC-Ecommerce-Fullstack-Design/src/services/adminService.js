@@ -73,6 +73,16 @@ const adminService = {
         return await response.json();
     },
 
+    getOrderDetails: async (orderId) => {
+        const response = await fetch(`${API_URL}/orders/${orderId}`, {
+            headers: {
+                'Authorization': `Bearer ${authService.getToken()}`
+            }
+        });
+        if (!response.ok) throw new Error('Failed to fetch order details');
+        return await response.json();
+    },
+
     // User Management (SuperAdmin)
     getAllUsers: async () => {
         const response = await fetch(`${API_URL}/users`, {

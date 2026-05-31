@@ -41,6 +41,10 @@ const ProductForm = ({ editingProduct, suppliers, onSubmit, onClose }) => {
             setPreviewUrl(editingProduct.imageUrl);
             setImageSource('link');
         }
+
+        if (!editingProduct && suppliers[0]?.id) {
+            setFormData(prev => prev.supplierId ? prev : { ...prev, supplierId: suppliers[0].id });
+        }
     }, [editingProduct, suppliers]);
 
     const handleImageChange = (e) => {
